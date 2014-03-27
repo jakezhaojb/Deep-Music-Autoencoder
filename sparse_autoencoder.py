@@ -77,31 +77,6 @@ def ReLU(x):
 
 def compute_cost(theta, *args):
 
-    # Batch-GD and L-BFGS parameters
-    '''
-    assert(len(args) > 2 and len(args) < 8)
-
-    lamb = 0.0001
-    sparsity_param = 0.01
-    beta = 3
-    data = args[0]
-    visible_size = args[1]
-    hidden_size = args[2]
-
-    if len(args) > 3:
-        lamb = args[3]
-
-    if len(args) > 4:
-        sparsity_param = args[4]
-
-    if len(args) > 5:
-        beta = args[5]
-
-    if len(args) > 6:
-        dpark = args[6]
-    
-    '''
-    
     # SGD with mini-batch parameters
     assert(len(args) > 2 and len(args) < 6)
 
@@ -132,6 +107,11 @@ def compute_cost(theta, *args):
     # dpark version
     cost_acc = dpark.accumulator(0)
 
+    # Broadcast
+    W1 = dpark.broadcast(W1)
+    W2 = dpark.broadcast(W2)
+    b1 = dpark.broadcast(b1)
+    b2 = dpark.broadcast(b2)
     def map_iter(dat):
         a[1] = dat.reshape(visible_size, 1)
         z[2] = np.dot(W1, a[1]) + b1
@@ -143,11 +123,17 @@ def compute_cost(theta, *args):
 
     #print "compute_cost rho collecting"
     dpark.makeRDD(
-        data.T
+        data.T, 200
         ).map(
         map_iter
         ).collect()
     cost = cost_acc.value
+
+    # Broadcast
+    W1.clear()
+    W2.clear()
+    b1.clear()
+    b2.clear()
     # dpark finished
 
     # No! We will adopt SGD
@@ -160,31 +146,6 @@ def compute_cost(theta, *args):
 
 
 def compute_grad(theta, *args):
-
-    # Batch-GD and L-BFGS parameters
-    '''
-    assert(len(args) > 2 and len(args) < 8)
-
-    lamb = 0.0001
-    sparsity_param = 0.01
-    beta = 3
-    data = args[0]
-    visible_size = args[1]
-    hidden_size = args[2]
-
-    if len(args) > 3:
-        lamb = args[3]
-
-    if len(args) > 4:
-        sparsity_param = args[4]
-
-    if len(args) > 5:
-        beta = args[5]
-
-    if len(args) > 6:
-        dpark = args[6]
-    
-    '''
 
     # SGD with mini-batch parameters
     assert(len(args) > 2 and len(args) < 6)
@@ -231,10 +192,27 @@ def compute_grad(theta, *args):
     # dpark version
     # new version
     # Backpropogation
+
+        # mini-batch of many samples
+    mini_batch_size = 20
+    mini_batch_ind = np.random.permutation(data.shape[1])
+
+    grad_stack = dict()
+
+    #print "Total number of gradient stack: %i" % int(data.shape[1] / mini_batch_size)
+    #print "This is the %i th computing gradient stacks!" % i
+    #mini_batch_ind_loop = mini_batch_ind[i*mini_batch_size: (i+1)*mini_batch_size]
+
     W1_delta_acc = dpark.accumulator(np.zeros(shape=W1.shape))
     W2_delta_acc = dpark.accumulator(np.zeros(shape=W2.shape))
     b1_delta_acc = dpark.accumulator(np.zeros(shape=b1.shape))
     b2_delta_acc = dpark.accumulator(np.zeros(shape=b2.shape))
+
+    # Broadcast
+    W1 = dpark.broadcast(W1)
+    W2 = dpark.broadcast(W2)
+    b1 = dpark.broadcast(b1)
+    b2 = dpark.broadcast(b2)
 
     def map_der_iter(dat):
         a[1] = dat.reshape(visible_size, 1)
@@ -259,35 +237,32 @@ def compute_grad(theta, *args):
         b2_delta_acc.add(sigma[3])
         b1_delta_acc.add(sigma[2])
 
-    # mini-batch of many samples
-    mini_batch_size = 20
-    mini_batch_ind = np.random.permutation(data.shape[1])
-
-    grad_stack = dict()
-    for i in range(data.shape[1] / mini_batch_size):
-        mini_batch_ind_loop = mini_batch_ind[i*mini_batch_size:\
-                                        (i+1)*mini_batch_size]
-        dpark.makeRDD(
-            data.T[mini_batch_ind_loop, :]
+    dpark.makeRDD(
+            data.T[mini_batch_ind[:mini_batch_size], :]
             ).map(
             map_der_iter
             ).collect()
+    
+    W1_delta = W1_delta_acc.value
+    W2_delta = W2_delta_acc.value
+    b1_delta = b1_delta_acc.value
+    b2_delta = b2_delta_acc.value
 
-        W1_delta = W1_delta_acc.value
-        W2_delta = W2_delta_acc.value
-        b1_delta = b1_delta_acc.value
-        b2_delta = b2_delta_acc.value
-        # dpark finished
+    # gradient computing
+    W1_grad = W1_delta / mini_batch_size + lamb * W1
+    W2_grad = W2_delta / mini_batch_size + lamb * W2
+    b1_grad = b1_delta / mini_batch_size
+    b2_grad = b2_delta / mini_batch_size
 
-        # gradient computing
-        W1_grad = W1_delta / mini_batch_size + lamb * W1
-        W2_grad = W2_delta / mini_batch_size + lamb * W2
-        b1_grad = b1_delta / mini_batch_size
-        b2_grad = b2_delta / mini_batch_size
+    # Broadcast
+    W1.clear()
+    W2.clear()
+    b1.clear()
+    b2.clear()
+    # dpark finished
 
-        # return vector version 'grad'
-        grad = np.hstack(([], W1_grad.reshape(W1.size), W2_grad.reshape(W2.size),
-                          b1_grad.reshape(b1.size), b2_grad.reshape(b2.size)))
-        grad_stack[i] = grad
+    # return vector version 'grad'
+    grad = np.hstack(([], W1_grad.reshape(W1.size), W2_grad.reshape(W2.size),
+                      b1_grad.reshape(b1.size), b2_grad.reshape(b2.size)))
 
-    return grad_stack
+    return grad

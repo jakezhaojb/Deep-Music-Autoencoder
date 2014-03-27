@@ -26,7 +26,7 @@ import pdb
 
 
 def stocha_grad_desc_agagrad(fun_cost, fun_grad, theta, option, 
-                             step_size_init=0.01, max_iter=50, tol=1e-5):
+                             step_size_init=0.01, max_iter=15000, tol=1e-5):
 
     assert(isfunction(fun_cost))
     assert(isfunction(fun_grad))
@@ -34,49 +34,45 @@ def stocha_grad_desc_agagrad(fun_cost, fun_grad, theta, option,
 
     for i in range(max_iter):
         cost = fun_cost(theta, *option)
-        grad_stack = fun_grad(theta, *option)
+        grad = fun_grad(theta, *option)
         print "Iteration: No.%5i -> Cost: %f" % (i, cost)
         
-        for grad in grad_stack.values():
+        '''
+        # Adagrad
+        try:
+            adg
+        except NameError:
+            adg = grad ** 2
+            step_size = step_size_init / np.sqrt(adg)
+        else:
+            adg = np.vstack((adg, grad ** 2))
+            step_size = step_size_init / np.sqrt(np.sum(adg, axis=0))
 
-            '''
-            # Adagrad
-            try:
-                adg
-            except NameError:
-                adg = grad ** 2
-                step_size = step_size_init / np.sqrt(adg)
-            else:
-                adg = np.vstack((adg, grad ** 2))
-                step_size = step_size_init / np.sqrt(np.sum(adg, axis=0))
+        # momentum
+        try:
+            delta
+        except NameError:
+            delta = grad.copy()
+        else:
+            delta = delta * 0.5 + grad
 
-            # momentum
-            try:
-                delta
-            except NameError:
-                delta = grad.copy()
-            else:
-                delta = delta * 0.5 + grad
-
-            theta -= step_size * delta
-
-            '''
-
-            theta -= step_size_init * grad
-
-            print "Cost: "  + str(fun_cost(theta, *option))
-            #num_zero =  len(np.where(theta == 0)[0])
-            #print "numbers of 0: " + str(num_zero)
-
-            # Tolerance and stop iterating
-            cost_per_iter = fun_cost(theta, *option)
-            if abs(cost_per_iter - cost) / max(1, cost, cost_per_iter) <= tol:
-                print "The SGD has been converged under your tolerance."
-                break
-            cost = cost_per_iter
+        theta -= step_size * delta
 
         del adg, delta
             
+        '''
+
+        theta -= step_size_init * grad
+        #num_zero =  len(np.where(theta == 0)[0])
+        #print "numbers of 0: " + str(num_zero)
+
+        # Tolerance and stop iterating
+        cost_per_iter = fun_cost(theta, *option)
+        if abs(cost_per_iter - cost) / max(1, cost, cost_per_iter) <= tol:
+            print "The SGD has been converged under your tolerance."
+            break
+        cost = cost_per_iter
+
     return theta
 
 
@@ -118,19 +114,6 @@ def main():
 
         # Obtain random parameters of considered layer
         theta = initial_parameter(layer_size[ind], layer_size[ind - 1])
-
-        # Batch Gradient Descent with L-BFGS
-        '''
-        # Training begins
-        options = (data, layer_size[ind - 1], layer_size[ind],
-                   lamb, sparsity_param[ind], beta, dpark_ctx)
-
-        opt = optimize.fmin_l_bfgs_b(compute_cost, theta,
-                                     compute_grad, options)
-
-        opttheta[ind] = opt[0]
-
-        '''
 
         # SGD with mini-batch
         options = (data, layer_size[ind - 1], layer_size[ind],

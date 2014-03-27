@@ -26,52 +26,56 @@ import pdb
 
 
 def stocha_grad_desc_agagrad(fun_cost, fun_grad, theta, option, 
-                             step_size_init=0.01, max_iter=15000, tol=1e-5):
+                             step_size_init=0.01, max_iter=10, tol=1e-7):
+    mini_batch_size = 20
 
     assert(isfunction(fun_cost))
     assert(isfunction(fun_grad))
     assert(isinstance(theta, np.ndarray))
 
     for i in range(max_iter):
-        cost = fun_cost(theta, *option)
-        grad = fun_grad(theta, *option)
-        print "Iteration: No.%5i -> Cost: %f" % (i, cost)
         
-        '''
-        # Adagrad
-        try:
-            adg
-        except NameError:
-            adg = grad ** 2
-            step_size = step_size_init / np.sqrt(adg)
-        else:
-            adg = np.vstack((adg, grad ** 2))
-            step_size = step_size_init / np.sqrt(np.sum(adg, axis=0))
+        mini_batch_ind = np.random.permutation(option[0].shape[1])
 
-        # momentum
-        try:
-            delta
-        except NameError:
-            delta = grad.copy()
-        else:
-            delta = delta * 0.5 + grad
+        for j in range(int(option[0].shape[1] / mini_batch_size)):
+            cost = fun_cost(theta, *option)
+            grad = fun_grad(theta, mini_batch_ind, j, *option)
+            print "Big loop: %i, Small iter: %3i, Cost: %f" % (i, j, cost)
+            '''
+            # Adagrad
+            try:
+                adg
+            except NameError:
+                adg = grad ** 2
+                step_size = step_size_init / np.sqrt(adg)
+            else:
+                adg = np.vstack((adg, grad ** 2))
+                step_size = step_size_init / np.sqrt(np.sum(adg, axis=0))
 
-        theta -= step_size * delta
+            # momentum
+            try:
+                delta
+            except NameError:
+                delta = grad.copy()
+            else:
+                delta = delta * 0.5 + grad
 
-        del adg, delta
-            
-        '''
+            theta -= step_size * delta
 
-        theta -= step_size_init * grad
-        #num_zero =  len(np.where(theta == 0)[0])
-        #print "numbers of 0: " + str(num_zero)
+            del adg, delta
+                
+            '''
 
-        # Tolerance and stop iterating
-        cost_per_iter = fun_cost(theta, *option)
-        if abs(cost_per_iter - cost) / max(1, cost, cost_per_iter) <= tol:
-            print "The SGD has been converged under your tolerance."
-            break
-        cost = cost_per_iter
+            theta -= step_size_init * grad
+            #num_zero =  len(np.where(theta == 0)[0])
+            #print "numbers of 0: " + str(num_zero)
+
+            # Tolerance and stop iterating
+            cost_per_iter = fun_cost(theta, *option)
+            #if abs(cost_per_iter - cost) / max(1, cost, cost_per_iter) <= tol:
+            #    print "The SGD has been converged under your tolerance."
+            #    break
+            cost = cost_per_iter
 
     return theta
 
@@ -120,7 +124,6 @@ def main():
                    beta, dpark_ctx)
         opttheta[ind] = stocha_grad_desc_agagrad(compute_cost, compute_grad,
                                                  theta, options)
-        print "SGD layer No. %i has been trained\n" % ind
 
         # Preparing next layer!
         W = opttheta.get(ind)[:layer_size[ind]*layer_size[ind-1]].\

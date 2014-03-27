@@ -145,7 +145,7 @@ def compute_cost(theta, *args):
     return cost
 
 
-def compute_grad(theta, *args):
+def compute_grad(theta, mini_batch_ind, index_loop, *args):
 
     # SGD with mini-batch parameters
     assert(len(args) > 2 and len(args) < 6)
@@ -195,13 +195,7 @@ def compute_grad(theta, *args):
 
         # mini-batch of many samples
     mini_batch_size = 20
-    mini_batch_ind = np.random.permutation(data.shape[1])
 
-    grad_stack = dict()
-
-    #print "Total number of gradient stack: %i" % int(data.shape[1] / mini_batch_size)
-    #print "This is the %i th computing gradient stacks!" % i
-    #mini_batch_ind_loop = mini_batch_ind[i*mini_batch_size: (i+1)*mini_batch_size]
 
     W1_delta_acc = dpark.accumulator(np.zeros(shape=W1.shape))
     W2_delta_acc = dpark.accumulator(np.zeros(shape=W2.shape))
@@ -238,10 +232,11 @@ def compute_grad(theta, *args):
         b1_delta_acc.add(sigma[2])
 
     dpark.makeRDD(
-            data.T[mini_batch_ind[:mini_batch_size], :]
-            ).map(
-            map_der_iter
-            ).collect()
+            data.T[mini_batch_ind[index_loop*mini_batch_size:\
+                                (index_loop+1)*mini_batch_size], :]
+                ).map(
+                map_der_iter
+                ).collect()
     
     W1_delta = W1_delta_acc.value
     W2_delta = W2_delta_acc.value

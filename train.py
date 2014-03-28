@@ -39,10 +39,12 @@ def stocha_grad_desc_agagrad(fun_cost, fun_grad, theta, option,
 
         for j in range(int(option[0].shape[1] / mini_batch_size)):
             cost = fun_cost(theta, *option)
-            grad = fun_grad(theta, mini_batch_ind, j, *option)
+            grad = fun_grad(theta, mini_batch_ind, mini_batch_size, j, *option)
             print "Big loop: %i, Small iter: %3i, Cost: %f" % (i, j, cost)
             
             # Adagrad
+            # QA
+            grad[np.where(grad < 1e-14)] += 1e-8  # Avoid nan
             try:
                 adg
             except NameError:
@@ -58,7 +60,7 @@ def stocha_grad_desc_agagrad(fun_cost, fun_grad, theta, option,
             except NameError:
                 delta = grad.copy()
             else:
-                delta = delta * 0.5 + grad
+                delta = delta * 0.9 + grad
 
             theta -= step_size * delta  # SGD with Adagrad and Momentum
                 
@@ -67,6 +69,7 @@ def stocha_grad_desc_agagrad(fun_cost, fun_grad, theta, option,
 
             # Tolerance and stop iterating
             cost_pre = cost
+
             #if abs(cost_pre - cost) / max(1, cost, cost_pre) <= tol:
             #    print "The SGD has been converged under your tolerance."
             #    break

@@ -145,7 +145,7 @@ def compute_cost(theta, *args):
     return cost
 
 
-def compute_grad(theta, mini_batch_ind, index_loop, *args):
+def compute_grad(theta, mini_batch_ind, mini_batch_size, index_loop, *args):
 
     # SGD with mini-batch parameters
     assert(len(args) > 2 and len(args) < 6)
@@ -192,10 +192,6 @@ def compute_grad(theta, mini_batch_ind, index_loop, *args):
     # dpark version
     # new version
     # Backpropogation
-
-        # mini-batch of many samples
-    mini_batch_size = 20
-
 
     W1_delta_acc = dpark.accumulator(np.zeros(shape=W1.shape))
     W2_delta_acc = dpark.accumulator(np.zeros(shape=W2.shape))

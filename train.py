@@ -27,7 +27,7 @@ import pdb
 
 def stocha_grad_desc_agagrad(fun_cost, fun_grad, theta, option, 
                              step_size_init=0.01, max_iter=10, tol=1e-7):
-    mini_batch_size = 20
+    mini_batch_size = 25
 
     assert(isfunction(fun_cost))
     assert(isfunction(fun_grad))
@@ -42,6 +42,10 @@ def stocha_grad_desc_agagrad(fun_cost, fun_grad, theta, option,
             grad = fun_grad(theta, mini_batch_ind, mini_batch_size, j, *option)
             print "Big loop: %i, Small iter: %3i, Cost: %f" % (i, j, cost)
             
+            ## DEBUG
+            #if j % 80 == 0:
+            #    pdb.set_trace()
+
             # Adagrad
             # QA
             grad[np.where(grad < 1e-14)] += 1e-8  # Avoid nan
@@ -63,6 +67,7 @@ def stocha_grad_desc_agagrad(fun_cost, fun_grad, theta, option,
                 delta = delta * 0.9 + grad
 
             theta -= step_size * delta  # SGD with Adagrad and Momentum
+
                 
             # Original SGD 
             #theta -= step_size_init * grad
@@ -83,14 +88,14 @@ def main():
 
     # Loading data
     print "Loading..."
-    data_train = sample_image()
+    data = sample_image()
 
     # Initialize networks
     visible_size = 64  # number of input units
     hidden_size = [25, 16, 9]  # number of hidden units of each layer
 
     lamb = 0.0001     # weight decay parameter
-    beta = 3    # weight of sparsity penalty dataset
+    #lamb = 0 # No weight decay!
 
     # dpark initialize
     dpark_ctx = DparkContext()
@@ -101,13 +106,6 @@ def main():
     layer_ind.remove(0)
     layer_size = [visible_size] + hidden_size
 
-    # desired average activation
-    sparsity_param = dict()
-    for ind in layer_ind:
-        # standard: 64 units -> sparsity parameter 0.01
-        sparsity_param[ind] = layer_size[ind - 1] * 0.01 / 64
-
-    data = data_train
     opttheta = dict()  # parameter vector of stack AE
     img = dict()  # visualization mode
 
@@ -120,7 +118,7 @@ def main():
 
         # SGD with mini-batch
         options = (data, layer_size[ind - 1], layer_size[ind],
-                   beta, dpark_ctx)
+                   lamb, dpark_ctx)
         opttheta[ind] = stocha_grad_desc_agagrad(compute_cost, compute_grad,
                                                  theta, options)
 
@@ -130,7 +128,7 @@ def main():
         b = opttheta.get(ind)[2*layer_size[ind]*layer_size[ind-1]:\
             2*layer_size[ind]*layer_size[ind-1]+layer_size[ind]].\
             reshape(layer_size[ind], 1)
-        data = sigmoid(np.dot(W, data) + b)
+        data = ReLU(np.dot(W, data) + b)
 
         # visulization shows
         img[ind] = display_effect(W)

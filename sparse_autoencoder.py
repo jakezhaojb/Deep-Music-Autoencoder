@@ -12,9 +12,14 @@ import pdb
 
 def initial_parameter(hidden_size, visible_size):
 
-    r = np.sqrt(6) / np.sqrt(hidden_size + visible_size + 1)
-    W1 = np.random.rand(hidden_size, visible_size) * 2 * r - r
-    W2 = np.random.rand(visible_size, hidden_size) * 2 * r - r
+    # Ng's initialization
+    #r = np.sqrt(6) / np.sqrt(hidden_size + visible_size + 1)
+    #W1 = np.random.rand(hidden_size, visible_size) * 2 * r - r
+    #W2 = np.random.rand(visible_size, hidden_size) * 2 * r - r
+
+    # Initialize weight matrix to a mean 0 uniform distribution
+    W1 = np.random.uniform(-1, 1, [hidden_size, visible_size])
+    W2 = np.random.uniform(-1, 1, [visible_size, hidden_size])
 
     b1 = np.zeros(hidden_size)
     b2 = np.zeros(visible_size)
@@ -106,6 +111,7 @@ def compute_cost(theta, *args):
 
     # dpark version
     cost_acc = dpark.accumulator(0)
+    sparsity_stat_acc = dpark.accumulator(0)
 
     # Broadcast
     W1 = dpark.broadcast(W1)
@@ -119,6 +125,9 @@ def compute_cost(theta, *args):
         z[3] = np.dot(W2, a[2]) + b2
         a[3] = ReLU(z[3])
 
+        # To see whether sparsity increases
+        sparsity_stat_acc.add(len(np.where(a[2] == 0)[0]) / float(len(a[2])))
+
         cost_acc.add(np.sum(np.power(a[3] - a[1], 2)) / 2)
 
     #print "compute_cost rho collecting"
@@ -128,6 +137,7 @@ def compute_cost(theta, *args):
         map_iter
         ).collect()
     cost = cost_acc.value
+    print "mean sparsity: %f" % (sparsity_stat_acc.value / float(data.shape[1]))
 
     # Broadcast
     W1.clear()
@@ -138,10 +148,7 @@ def compute_cost(theta, *args):
 
     # No! We will adopt SGD
     cost = cost / data.shape[1]
-
-
     cost += lamb / 2 * (np.sum(W1 ** 2) + np.sum(W2 ** 2))  # better than the former
-
     return cost
 
 
@@ -160,7 +167,6 @@ def compute_grad(theta, mini_batch_ind, mini_batch_size, index_loop, *args):
 
     if len(args) > 4:
         dpark = args[4]
-
 
     # Get parameters from theta of vector version
     W1 = theta[: hidden_size * visible_size].reshape(hidden_size, visible_size)
@@ -193,11 +199,6 @@ def compute_grad(theta, mini_batch_ind, mini_batch_size, index_loop, *args):
     # new version
     # Backpropogation
 
-    W1_delta_acc = dpark.accumulator(np.zeros(shape=W1.shape))
-    W2_delta_acc = dpark.accumulator(np.zeros(shape=W2.shape))
-    b1_delta_acc = dpark.accumulator(np.zeros(shape=b1.shape))
-    b2_delta_acc = dpark.accumulator(np.zeros(shape=b2.shape))
-
     # Broadcast
     W1 = dpark.broadcast(W1)
     W2 = dpark.broadcast(W2)
@@ -221,23 +222,29 @@ def compute_grad(theta, mini_batch_ind, mini_batch_size, index_loop, *args):
         sigma[3] = -(a[1] - a[3]) * a_der[3] 
         sigma[2] = (np.dot(W2.T, sigma[3])) * a_der[2]
 
-        # accumulators
-        W2_delta_acc.add(np.dot(sigma[3], a[2].T))
-        W1_delta_acc.add(np.dot(sigma[2], a[1].T))
-        b2_delta_acc.add(sigma[3])
-        b1_delta_acc.add(sigma[2])
+        res = (np.dot(sigma[3], a[2].T),
+               np.dot(sigma[2], a[1].T),
+               sigma[3], sigma[2])
 
-    dpark.makeRDD(
-            data.T[mini_batch_ind[index_loop*mini_batch_size:\
-                                (index_loop+1)*mini_batch_size], :]
-                ).map(
-                map_der_iter
-                ).collect()
+        return res
+
+    para_collect = dpark.makeRDD(
+                    data.T[
+                    mini_batch_ind[
+                    index_loop*mini_batch_size:\
+                    (index_loop+1)*mini_batch_size
+                    ], :]).map(
+                    map_der_iter
+                    ).reduce(
+                    lambda x, y: (
+                    x[0]+y[0], x[1]+y[1], 
+                    x[2]+y[2], x[3]+y[3]
+                    ))
     
-    W1_delta = W1_delta_acc.value
-    W2_delta = W2_delta_acc.value
-    b1_delta = b1_delta_acc.value
-    b2_delta = b2_delta_acc.value
+    W2_delta = para_collect[0]
+    W1_delta = para_collect[1]
+    b2_delta = para_collect[2]
+    b1_delta = para_collect[3]
 
     # gradient computing
     W1_grad = W1_delta / mini_batch_size + lamb * W1

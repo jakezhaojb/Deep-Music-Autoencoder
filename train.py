@@ -27,101 +27,91 @@ import pdb
 
 def stocha_grad_desc_agagrad(fun_cost, fun_grad, theta, option, 
                              step_size_init=0.01, max_iter=10, tol=1e-7):
-    mini_batch_size = 25
+    mini_batch_size = 20
 
     assert(isfunction(fun_cost))
     assert(isfunction(fun_grad))
     assert(isinstance(theta, np.ndarray))
 
     for i in range(max_iter):
-        
-        mini_batch_ind = np.random.permutation(option[0].shape[1])
+        try:
+            mini_batch_ind = np.random.permutation(option[0].shape[1])
+            for j in range(int(option[0].shape[1] / mini_batch_size)):
+                cost = fun_cost(theta, *option)
+                grad = fun_grad(theta, mini_batch_ind, mini_batch_size, j, *option)
+                print "Big loop: %i, Small iter: %3i, Cost: %f" % (i, j, cost)
 
-        for j in range(int(option[0].shape[1] / mini_batch_size)):
-            cost = fun_cost(theta, *option)
-            grad = fun_grad(theta, mini_batch_ind, mini_batch_size, j, *option)
-            print "Big loop: %i, Small iter: %3i, Cost: %f" % (i, j, cost)
-            
-            ## DEBUG
-            #if j % 80 == 0:
-            #    pdb.set_trace()
+                # Adagrad
+                # QA
+                grad[np.where(grad < 1e-14)] += 1e-8  # Avoid nan
+                if not 'adg' in locals():
+                    adg = grad ** 2
+                    step_size = step_size_init / np.sqrt(adg)
+                else:
+                    adg = np.vstack((adg, grad ** 2))
+                    step_size = step_size_init / np.sqrt(np.sum(adg, axis=0))
 
-            # Adagrad
-            # QA
-            grad[np.where(grad < 1e-14)] += 1e-8  # Avoid nan
-            try:
-                adg
-            except NameError:
-                adg = grad ** 2
-                step_size = step_size_init / np.sqrt(adg)
-            else:
-                adg = np.vstack((adg, grad ** 2))
-                step_size = step_size_init / np.sqrt(np.sum(adg, axis=0))
+                # momentum
+                if not 'delta' in locals():
+                    delta = grad.copy()
+                else:
+                    delta = delta * 0.9 + grad
 
-            # momentum
-            try:
-                delta
-            except NameError:
-                delta = grad.copy()
-            else:
-                delta = delta * 0.9 + grad
+                theta -= step_size * delta  # SGD with Adagrad and Momentum
 
-            theta -= step_size * delta  # SGD with Adagrad and Momentum
+                # Original SGD 
+                #theta -= step_size_init * grad
 
-                
-            # Original SGD 
-            #theta -= step_size_init * grad
+                # Tolerance and stop iterating
+                cost_pre = cost
+                if abs(cost_pre - cost) / max(1, cost, cost_pre) <= tol:
+                    print "The SGD has been converged under your tolerance."
+                    break
+            del adg, delta
 
-            # Tolerance and stop iterating
-            cost_pre = cost
-
-            #if abs(cost_pre - cost) / max(1, cost, cost_pre) <= tol:
-            #    print "The SGD has been converged under your tolerance."
-            #    break
-
-        del adg, delta
-
+        except(KeyboardInterrupt):
+            print "The training is terminated mannaully, and the parameters at this stage are returned"
+            return theta
+        except:
+            import traceback
+            traceback.print_exc()
+        else:
+            pass
     return theta
 
 
 def main():
-
     # Loading data
     print "Loading..."
     data = sample_image()
-
     # Initialize networks
     visible_size = 64  # number of input units
     hidden_size = [25, 16, 9]  # number of hidden units of each layer
-
-    lamb = 0.0001     # weight decay parameter
-    #lamb = 0 # No weight decay!
+    #lamb = 0.0001     # weight decay parameter
+    lamb = 0.1 # No weight decay!
 
     # dpark initialize
     dpark_ctx = DparkContext()
-
     # Start training, and L-BFGS is adopted
     # We apply a stack-wise greedy training process
     layer_ind = range(len(hidden_size) + 1)
     layer_ind.remove(0)
     layer_size = [visible_size] + hidden_size
-
     opttheta = dict()  # parameter vector of stack AE
     img = dict()  # visualization mode
-
     for ind in layer_ind:
-
         print "start training layer No.%d" % ind
-
         # Obtain random parameters of considered layer
         theta = initial_parameter(layer_size[ind], layer_size[ind - 1])
-
         # SGD with mini-batch
         options = (data, layer_size[ind - 1], layer_size[ind],
                    lamb, dpark_ctx)
-        opttheta[ind] = stocha_grad_desc_agagrad(compute_cost, compute_grad,
-                                                 theta, options)
-
+        opttheta[ind] = stocha_grad_desc_agagrad(
+                        compute_cost, compute_grad,
+                        theta, options,
+                        step_size_init=0.01,
+                        max_iter=200
+                        )
         # Preparing next layer!
         W = opttheta.get(ind)[:layer_size[ind]*layer_size[ind-1]].\
             reshape(layer_size[ind], layer_size[ind-1])
@@ -129,11 +119,13 @@ def main():
             2*layer_size[ind]*layer_size[ind-1]+layer_size[ind]].\
             reshape(layer_size[ind], 1)
         data = ReLU(np.dot(W, data) + b)
-
         # visulization shows
         img[ind] = display_effect(W)
         plt.axis('off')
         plt.savefig(str(ind) + '.jpg')
+
+        # DEBUG
+        sys.exit()
 
     # Trained parameters of stack AE
     para_stack = vecstack2stack(opttheta, hidden_size, visible_size)
@@ -144,7 +136,6 @@ def main():
     out.close()
 
     print "Mission complete!"
-
 
 if __name__ == '__main__':
     main()

@@ -88,7 +88,8 @@ def main():
     visible_size = 64  # number of input units
     hidden_size = [25, 16, 9]  # number of hidden units of each layer
     #lamb = 0.0001     # weight decay parameter
-    lamb = 0.1 # No weight decay!
+    lamb = 0 # No weight decay!
+    beta = 3
 
     # dpark initialize
     dpark_ctx = DparkContext()
@@ -99,13 +100,19 @@ def main():
     layer_size = [visible_size] + hidden_size
     opttheta = dict()  # parameter vector of stack AE
     img = dict()  # visualization mode
+
+    sparsity_param = dict()
+    for ind in layer_ind:
+        # standard: 64 units -> sparsity parameter 0.01
+        sparsity_param[ind] = layer_size[ind - 1] * 0.01 / 64
+
     for ind in layer_ind:
         print "start training layer No.%d" % ind
         # Obtain random parameters of considered layer
         theta = initial_parameter(layer_size[ind], layer_size[ind - 1])
         # SGD with mini-batch
         options = (data, layer_size[ind - 1], layer_size[ind],
-                   lamb, dpark_ctx)
+                   lamb, sparsity_param[ind], beta, dpark_ctx)
         opttheta[ind] = stocha_grad_desc_agagrad(
                         compute_cost, compute_grad,
                         theta, options,
@@ -125,6 +132,9 @@ def main():
         plt.savefig(str(ind) + '.jpg')
 
         # DEBUG
+        fin = open("theta_DEBUG.pkl", "wb")
+        pickle.dump((W, b), fin)
+        fin.close()
         sys.exit()
 
     # Trained parameters of stack AE

@@ -237,6 +237,8 @@ def compute_grad(theta, mini_batch_ind, mini_batch_size, index_loop, *args):
     b1 = dpark.broadcast(b1)
     b2 = dpark.broadcast(b2)
     brho = dpark.broadcast(rho) # Important!
+    beta = np.ones(shape=rho.shape) * beta
+    sparsity_param = np.ones(shape=rho.shape) * sparsity_param
     b_beta = dpark.broadcast(beta)
     b_sparsity_param = dpark.broadcast(sparsity_param)
 

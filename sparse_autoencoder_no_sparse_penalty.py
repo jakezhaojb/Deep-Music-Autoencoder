@@ -9,8 +9,6 @@ import numpy as np
 from stack_and_para import stack2vecstack
 import pdb
 
-# global variable
-rho = np.array([])
 
 def initial_parameter(hidden_size, visible_size):
 
@@ -85,11 +83,9 @@ def ReLU(x):
 def compute_cost(theta, *args):
 
     # SGD with mini-batch parameters
-    assert(len(args) > 2 and len(args) < 8)
+    assert(len(args) > 2 and len(args) < 6)
 
     lamb = 0.0001
-    sparsity_param = 0.01
-    beta = 3
     data = args[0]
     visible_size = args[1]
     hidden_size = args[2]
@@ -98,15 +94,7 @@ def compute_cost(theta, *args):
         lamb = args[3]
 
     if len(args) > 4:
-        sparsity_param = args[4]
-
-    if len(args) > 5:
-        beta = args[5]
-
-    if len(args) > 6:
-        dpark = args[6]
-
-    global rho
+        dpark = args[4]
 
     # Initialize network layers
     z = dict()  # keys are from 2 to number of layers
@@ -141,17 +129,13 @@ def compute_cost(theta, *args):
         sparsity_stat_acc.add(len(np.where(a[2] == 0)[0]) / float(len(a[2])))
 
         cost_acc.add(np.sum(np.power(a[3] - a[1], 2)) / 2)
-        rho_iter = a[2].reshape(a[2].size)
-
-        return rho_iter
 
     #print "compute_cost rho collecting"
-    rho = dpark.makeRDD(
-                    data.T, 200
-                    ).map(
-                    map_iter
-                    ).reduce(
-                    lambda x, y: x+y)
+    dpark.makeRDD(
+        data.T, 200
+        ).map(
+        map_iter
+        ).collect()
     cost = cost_acc.value
     print "mean sparsity: %f" % (sparsity_stat_acc.value / float(data.shape[1]))
 
@@ -164,24 +148,16 @@ def compute_cost(theta, *args):
 
     # No! We will adopt SGD
     cost = cost / data.shape[1]
-    rho /= data.shape[1] 
-    rho = rho.reshape(rho.size, 1)
-
-    sparse_kl = sparsity_param * np.log(sparsity_param / rho) +\
-        (1 - sparsity_param) * np.log((1 - sparsity_param) / (1 - rho))
     cost += lamb / 2 * (np.sum(W1 ** 2) + np.sum(W2 ** 2))  # better than the former
-    cost += beta * sum(sparse_kl)
     return cost
 
 
 def compute_grad(theta, mini_batch_ind, mini_batch_size, index_loop, *args):
 
     # SGD with mini-batch parameters
-    assert(len(args) > 2 and len(args) < 8)
+    assert(len(args) > 2 and len(args) < 6)
 
     lamb = 0.0001
-    sparsity_param = 0.01
-    beta = 3
     data = args[0]
     visible_size = args[1]
     hidden_size = args[2]
@@ -190,15 +166,7 @@ def compute_grad(theta, mini_batch_ind, mini_batch_size, index_loop, *args):
         lamb = args[3]
 
     if len(args) > 4:
-        sparsity_param = args[4]
-
-    if len(args) > 5:
-        beta = args[5]
-
-    if len(args) > 6:
-        dpark = args[6]
-
-    global rho
+        dpark = args[4]
 
     # Get parameters from theta of vector version
     W1 = theta[: hidden_size * visible_size].reshape(hidden_size, visible_size)
@@ -236,10 +204,6 @@ def compute_grad(theta, mini_batch_ind, mini_batch_size, index_loop, *args):
     W2 = dpark.broadcast(W2)
     b1 = dpark.broadcast(b1)
     b2 = dpark.broadcast(b2)
-    brho = dpark.broadcast(rho) # Important!
-    b_beta = dpark.broadcast(beta)
-    b_sparsity_param = dpark.broadcast(sparsity_param)
-
 
     def map_der_iter(dat):
         a[1] = dat.reshape(visible_size, 1)
@@ -256,8 +220,7 @@ def compute_grad(theta, mini_batch_ind, mini_batch_size, index_loop, *args):
 
         # sigma computing
         sigma[3] = -(a[1] - a[3]) * a_der[3] 
-        sparsity_sigma = -b_sparsity_param / brho + (1 - b_sparsity_param) / (1 - brho)
-        sigma[2] = (np.dot(W2.T, sigma[3]) + b_beta*sparsity_sigma) * a_der[2]
+        sigma[2] = (np.dot(W2.T, sigma[3])) * a_der[2]
 
         res = (np.dot(sigma[3], a[2].T),
                np.dot(sigma[2], a[1].T),
@@ -294,9 +257,6 @@ def compute_grad(theta, mini_batch_ind, mini_batch_size, index_loop, *args):
     W2.clear()
     b1.clear()
     b2.clear()
-    brho.clear()
-    b_beta.clear()
-    b_sparsity_param.clear()
     # dpark finished
 
     # return vector version 'grad'

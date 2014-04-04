@@ -33,8 +33,8 @@ def stocha_grad_desc_agagrad(fun_cost, fun_grad, theta, option,
     assert(isfunction(fun_grad))
     assert(isinstance(theta, np.ndarray))
 
-    for i in range(max_iter):
-        try:
+    try:
+        for i in range(max_iter):
             mini_batch_ind = np.random.permutation(option[0].shape[1])
             for j in range(int(option[0].shape[1] / mini_batch_size)):
                 cost = fun_cost(theta, *option)
@@ -63,20 +63,20 @@ def stocha_grad_desc_agagrad(fun_cost, fun_grad, theta, option,
                 #theta -= step_size_init * grad
 
                 # Tolerance and stop iterating
-                cost_pre = cost
-                if abs(cost_pre - cost) / max(1, cost, cost_pre) <= tol:
+                if j > 0 and abs(cost_pre - cost) / max(1, cost, cost_pre) <= tol:
                     print "The SGD has been converged under your tolerance."
                     break
+                cost_pre = cost
             del adg, delta
 
-        except(KeyboardInterrupt):
-            print "The training is terminated mannaully, and the parameters at this stage are returned"
-            return theta
-        except:
-            import traceback
-            traceback.print_exc()
-        else:
-            pass
+    except(KeyboardInterrupt):
+        print "The training is terminated mannaully, and the parameters at this stage are returned"
+        return theta
+    except:
+        import traceback
+        traceback.print_exc()
+    else:
+        pass
     return theta
 
 
@@ -89,7 +89,7 @@ def main():
     hidden_size = [25, 16, 9]  # number of hidden units of each layer
     #lamb = 0.0001     # weight decay parameter
     lamb = 0 # No weight decay!
-    beta = 3
+    beta = 0.01
 
     # dpark initialize
     dpark_ctx = DparkContext()
@@ -104,7 +104,7 @@ def main():
     sparsity_param = dict()
     for ind in layer_ind:
         # standard: 64 units -> sparsity parameter 0.01
-        sparsity_param[ind] = layer_size[ind - 1] * 0.01 / 64
+        sparsity_param[ind] = layer_size[ind - 1] * 0.1 / 64
 
     for ind in layer_ind:
         print "start training layer No.%d" % ind
@@ -117,7 +117,8 @@ def main():
                         compute_cost, compute_grad,
                         theta, options,
                         step_size_init=0.01,
-                        max_iter=200
+                        max_iter=5,
+                        tol=1e-4
                         )
         # Preparing next layer!
         W = opttheta.get(ind)[:layer_size[ind]*layer_size[ind-1]].\

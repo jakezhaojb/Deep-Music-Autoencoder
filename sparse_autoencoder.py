@@ -131,6 +131,7 @@ def compute_cost(theta, *args):
     b1 = dpark.broadcast(b1)
     b2 = dpark.broadcast(b2)
     def map_iter(dat):
+        '''
         a[1] = dat.reshape(visible_size, 1)
         z[2] = np.dot(W1, a[1]) + b1
         a[2] = ReLU(z[2])
@@ -139,6 +140,22 @@ def compute_cost(theta, *args):
 
         # To see whether sparsity increases
         sparsity_stat_acc.add(len(np.where(a[2] == 0)[0]) / float(len(a[2])))
+
+        cost_acc.add(np.sum(np.power(a[3] - a[1], 2)) / 2)
+        rho_iter = a[2].reshape(a[2].size)
+
+        return rho_iter
+        '''
+        # sigmoid DEBUG
+        a[1] = dat.reshape(visible_size, 1)
+        z[2] = np.dot(W1, a[1]) + b1
+        a[2] = sigmoid(z[2])
+        z[3] = np.dot(W2, a[2]) + b2
+        a[3] = sigmoid(z[3])
+
+        # To see whether sparsity increases
+        #sparsity_stat_acc.add(len(np.where(a[2] == 0)[0]) / float(len(a[2])))
+        sparsity_stat_acc.add(len(np.where(a[2]<1e-4)[0]) / float(len(a[2])))
 
         cost_acc.add(np.sum(np.power(a[3] - a[1], 2)) / 2)
         rho_iter = a[2].reshape(a[2].size)
@@ -244,6 +261,7 @@ def compute_grad(theta, mini_batch_ind, mini_batch_size, index_loop, *args):
 
 
     def map_der_iter(dat):
+        '''
         a[1] = dat.reshape(visible_size, 1)
         z[2] = np.dot(W1, a[1]) + b1
         a[2] = ReLU(z[2])
@@ -266,6 +284,25 @@ def compute_grad(theta, mini_batch_ind, mini_batch_size, index_loop, *args):
                sigma[3], sigma[2])
 
         return res
+        '''
+        
+        # sigmoid DEBUG
+        a[1] = dat.reshape(visible_size, 1)
+        z[2] = np.dot(W1, a[1]) + b1
+        a[2] = sigmoid(z[2])
+        z[3] = np.dot(W2, a[2]) + b2
+        a[3] = sigmoid(z[3])
+        sigma[3] = -(a[1] - a[3]) * (a[3] * (1 - a[3]))
+        sparsity_sigma = -b_sparsity_param / brho + (1 - b_sparsity_param) / (1 - brho)
+        sigma[2] = (np.dot(W2.T, sigma[3]) + b_beta * sparsity_sigma) *\
+                   (a[2] * (1 - a[2]))
+        
+        res = (np.dot(sigma[3], a[2].T), 
+               np.dot(sigma[2], a[1].T),
+               sigma[3], sigma[2])
+        
+        return res
+
 
     para_collect = dpark.makeRDD(
                     data.T[

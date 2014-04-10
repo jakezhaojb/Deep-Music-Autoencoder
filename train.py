@@ -34,6 +34,7 @@ def stocha_grad_desc_agagrad(fun_cost, fun_grad, theta, option,
     assert(isinstance(theta, np.ndarray))
 
     try:
+        cost_pre = 0
         for i in range(max_iter):
             mini_batch_ind = np.random.permutation(option[0].shape[1])
             for j in range(int(option[0].shape[1] / mini_batch_size)):
@@ -50,14 +51,18 @@ def stocha_grad_desc_agagrad(fun_cost, fun_grad, theta, option,
                 else:
                     adg = np.vstack((adg, grad ** 2))
                     step_size = step_size_init / np.sqrt(np.sum(adg, axis=0))
+                print "The mean of step_size: %f" % np.mean(step_size)
 
                 # momentum
                 if not 'delta' in locals():
                     delta = grad.copy()
                 else:
-                    delta = delta * 0.9 + grad
+                    delta = delta * (0.5 + i*0.02)  + grad
 
                 theta -= step_size * delta  # SGD with Adagrad and Momentum
+
+                # Purely Adagrad, no momentum
+                #theta -= step_size * grad
 
                 # Original SGD 
                 #theta -= step_size_init * grad
@@ -67,7 +72,10 @@ def stocha_grad_desc_agagrad(fun_cost, fun_grad, theta, option,
                     print "The SGD has been converged under your tolerance."
                     break
                 cost_pre = cost
-            del adg, delta
+            #del adg, delta
+
+            # if purely Adagrad, no momentum
+            #del adg 
 
     except(KeyboardInterrupt):
         print "The training is terminated mannaully, and the parameters at this stage are returned"
@@ -88,8 +96,13 @@ def main():
     visible_size = 64  # number of input units
     hidden_size = [25, 16, 9]  # number of hidden units of each layer
     #lamb = 0.0001     # weight decay parameter
+    '''
     lamb = 0 # No weight decay!
     beta = 0.01
+    '''
+    # sigmoid DEBUG
+    lamb = 0.0001
+    beta = 3
 
     # dpark initialize
     dpark_ctx = DparkContext()
@@ -104,7 +117,7 @@ def main():
     sparsity_param = dict()
     for ind in layer_ind:
         # standard: 64 units -> sparsity parameter 0.01
-        sparsity_param[ind] = layer_size[ind - 1] * 0.1 / 64
+        sparsity_param[ind] = layer_size[ind - 1] * 0.01 / 64
 
     for ind in layer_ind:
         print "start training layer No.%d" % ind
@@ -116,9 +129,9 @@ def main():
         opttheta[ind] = stocha_grad_desc_agagrad(
                         compute_cost, compute_grad,
                         theta, options,
-                        step_size_init=0.01,
-                        max_iter=5,
-                        tol=1e-4
+                        step_size_init=0.1,
+                        max_iter=25,
+                        tol=1e-7
                         )
         # Preparing next layer!
         W = opttheta.get(ind)[:layer_size[ind]*layer_size[ind-1]].\

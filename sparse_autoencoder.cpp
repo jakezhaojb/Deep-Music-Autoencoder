@@ -43,7 +43,7 @@ double compute_cost(std::map<string, MatrixXd> WgtBias, MatrixXd data,
                     double sparsity_param, double beta){
   //MatrixXd W1, W2;
   //VectorXd b1, b2;
-  int i, j;
+  int i;
   double cost;
   VectorXd sparse_kl;  // sparse penalty
   auto W1 = WgtBias["W1"];
@@ -78,9 +78,9 @@ double compute_cost(std::map<string, MatrixXd> WgtBias, MatrixXd data,
 
 
 std::map<string, MatrixXd> compute_batch_grad(std::map<string, MatrixXd> WgtBias, int hidden_size, 
-                    int visible_size, double lamb,
-                    double sparsity_param, double beta){
-  int i, j;
+                                              int visible_size, double lamb,
+                                              double sparsity_param, double beta){
+  int i;
   auto W1 = WgtBias["W1"];
   auto W2 = WgtBias["W2"];
   auto b1 = WgtBias["b1"];
@@ -131,4 +131,10 @@ std::map<string, MatrixXd> compute_batch_grad(std::map<string, MatrixXd> WgtBias
   WgtBiasGrad["b2"] = b2_grad;
 
   return WgtBiasGrad;
+}
+
+
+std::map<string, MatrixXd> compute_stoc_grad(std::map<string, MatrixXd> WgtBias, int hidden_size, 
+                                             int visible_size, double lamb, ,double sparsity_param, 
+                                             double beta, int index_data){
 }

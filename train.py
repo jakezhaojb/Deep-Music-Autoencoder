@@ -129,7 +129,7 @@ def main():
         opttheta[ind] = stocha_grad_desc_agagrad(
                         compute_cost, compute_grad,
                         theta, options,
-                        step_size_init=0.1,
+                        step_size_init=0.2,
                         max_iter=25,
                         tol=1e-7
                         )

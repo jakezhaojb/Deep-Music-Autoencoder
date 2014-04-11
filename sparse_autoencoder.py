@@ -10,7 +10,7 @@ from stack_and_para import stack2vecstack
 import pdb
 
 # global variable
-rho = np.array([])
+#rho = np.array([])
 
 def initial_parameter(hidden_size, visible_size):
 
@@ -106,7 +106,7 @@ def compute_cost(theta, *args):
     if len(args) > 6:
         dpark = args[6]
 
-    global rho
+    #global rho
 
     # Initialize network layers
     z = dict()  # keys are from 2 to number of layers
@@ -215,7 +215,7 @@ def compute_grad(theta, mini_batch_ind, mini_batch_size, index_loop, *args):
     if len(args) > 6:
         dpark = args[6]
 
-    global rho
+    #global rho
 
     # Get parameters from theta of vector version
     W1 = theta[: hidden_size * visible_size].reshape(hidden_size, visible_size)
@@ -247,6 +247,20 @@ def compute_grad(theta, mini_batch_ind, mini_batch_size, index_loop, *args):
     # dpark version
     # new version
     # Backpropogation
+
+    # Getting rho
+    # dpark await
+    rho = np.zeros(b1.shape)
+    for dat in data.T[mini_batch_ind[index_loop*mini_batch_size:\
+                    (index_loop+1)*mini_batch_size
+                    ], :]:
+        a[1] = dat.reshape(visible_size, 1)
+        z[2] = np.dot(W1, a[1]) + b1
+        a[2] = sigmoid(z[2])
+        z[3] = np.dot(W2, a[2]) + b2
+        a[3] = sigmoid(z[3])
+        rho += a[2]
+    rho /= mini_batch_size
 
     # Broadcast
     W1 = dpark.broadcast(W1)
@@ -302,7 +316,6 @@ def compute_grad(theta, mini_batch_ind, mini_batch_size, index_loop, *args):
                sigma[3], sigma[2])
         
         return res
-
 
     para_collect = dpark.makeRDD(
                     data.T[

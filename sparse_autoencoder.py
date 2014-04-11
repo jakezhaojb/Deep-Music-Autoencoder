@@ -262,6 +262,46 @@ def compute_grad(theta, mini_batch_ind, mini_batch_size, index_loop, *args):
         rho += a[2]
     rho /= mini_batch_size
 
+    def map_der_iter(dat):
+        # sigmoid DEBUG
+        a[1] = dat.reshape(visible_size, 1)
+        z[2] = np.dot(W1, a[1]) + b1
+        a[2] = sigmoid(z[2])
+        z[3] = np.dot(W2, a[2]) + b2
+        a[3] = sigmoid(z[3])
+        sigma[3] = -(a[1] - a[3]) * (a[3] * (1 - a[3]))
+        sparsity_sigma = -sparsity_param / rho + (1 - sparsity_param) / (1 - rho)
+        sigma[2] = (np.dot(W2.T, sigma[3]) + beta * sparsity_sigma) *\
+                   (a[2] * (1 - a[2]))
+        
+        res = (np.dot(sigma[3], a[2].T), 
+               np.dot(sigma[2], a[1].T),
+               sigma[3], sigma[2])
+        
+        return res
+    
+    data_mini_batch = data.T[mini_batch_ind[
+                    index_loop*mini_batch_size:\
+                    (index_loop+1)*mini_batch_size
+                    ], :]
+    para_collect = reduce(lambda x, y: (
+                          x[0]+y[0], x[1]+y[1], 
+                          x[2]+y[2], x[3]+y[3]),
+                          map(map_der_iter, data_mini_batch))
+
+    W2_delta = para_collect[0]
+    W1_delta = para_collect[1]
+    b2_delta = para_collect[2]
+    b1_delta = para_collect[3]
+
+    # gradient computing
+    W1_grad = W1_delta / mini_batch_size + lamb * W1
+    W2_grad = W2_delta / mini_batch_size + lamb * W2
+    b1_grad = b1_delta / mini_batch_size
+    b2_grad = b2_delta / mini_batch_size
+
+
+    """
     # Broadcast
     W1 = dpark.broadcast(W1)
     W2 = dpark.broadcast(W2)
@@ -350,6 +390,7 @@ def compute_grad(theta, mini_batch_ind, mini_batch_size, index_loop, *args):
     b_beta.clear()
     b_sparsity_param.clear()
     # dpark finished
+    """
 
     # return vector version 'grad'
     grad = np.hstack(([], W1_grad.reshape(W1.size), W2_grad.reshape(W2.size),

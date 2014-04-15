@@ -1,29 +1,15 @@
-#include <iostream>
-#include <math.h>
-#include <algorithm>
-#include <Eigen/Dense>
-#include <vector>
-#include <string>
-#include <assert.h>
-#include <map>
-
-using std::vector;
-using std::string;
-using namespace Eigen;
-
-// global
-VectorXd g_rho;
+#include "sparse_autoencoder.h"
 
 // Initialize weights and bias in a key-value struct
-std::map<string, MatrixXd> initialize_parameter(int visible_size, int hidden_size){
+std::map<string, MatrixXd> initialize_parameter(int visible_size_lyr, int hidden_size_lyr){
   // According to Ng's initialization
   double r = sqrt(6);
   std::map<string, MatrixXd> InitWgtBias;
 
-  MatrixXd W1 = (MatrixXd::Random(hidden_size, visible_size).array() * 2 * r - r).matrix();
-  MatrixXd W2 = (MatrixXd::Random(visible_size, hidden_size).array() * 2 * r - r).matrix();
-  VectorXd b1 = VectorXd::Random(hidden_size);
-  VectorXd b2 = VectorXd::Random(visible_size);
+  MatrixXd W1 = (MatrixXd::Random(hidden_size_lyr, visible_size_lyr).array() * 2 * r - r).matrix();
+  MatrixXd W2 = (MatrixXd::Random(visible_size_lyr, hidden_size_lyr).array() * 2 * r - r).matrix();
+  VectorXd b1 = VectorXd::Random(hidden_size_lyr);
+  VectorXd b2 = VectorXd::Random(visible_size_lyr);
 
   InitWgtBias["W1"] = W1;
   InitWgtBias["W2"] = W2;
@@ -43,8 +29,8 @@ VectorXd sigmoid(VectorXd x){
 
 
 // compute the cost of AE reconstruction, and combine the weight decay and sparse penalty
-double compute_cost(std::map<string, MatrixXd> WgtBias, MatrixXd& data, 
-                    int hidden_size, int visible_size, double lamb,
+double compute_cost(const std::map<string, MatrixXd> WgtBias, const MatrixXd& data, 
+                    int hidden_size_lyr, int visible_size_lyr, double lamb,
                     double sparsity_param, double beta){
   //MatrixXd W1, W2;
   //VectorXd b1, b2;
@@ -83,9 +69,9 @@ double compute_cost(std::map<string, MatrixXd> WgtBias, MatrixXd& data,
 
 
 // compute the batch-gradient of the cost over each weight elem and bias elem
-std::map<string, MatrixXd> compute_batch_grad(std::map<string, MatrixXd> WgtBias, MatrixXd& data, 
-                                              int hidden_size, int visible_size, double lamb,
-                                              double sparsity_param, double beta){
+std::map<string, MatrixXd> compute_batch_grad(const std::map<string, MatrixXd> WgtBias,
+                        const MatrixXd& data, int hidden_size_lyr, int visible_size_lyr, 
+                        double lamb, double sparsity_param, double beta){
   int i;
   MatrixXd W1 = WgtBias["W1"];
   MatrixXd W2 = WgtBias["W2"];
@@ -135,11 +121,50 @@ std::map<string, MatrixXd> compute_batch_grad(std::map<string, MatrixXd> WgtBias
 }
 
 
+// SGD without mini-batch
+std::map<string, MatrixXd> compute_stoc_grad(const std::map<string, MatrixXd> WgtBias, 
+                      const MatrixXd& data, int hidden_size_lyr, int visible_size_lyr, 
+                      double lamb, double sparsity_param, double beta, int index){
+  int i;
+  std::map<string, MatrixXd> WgtBiasGrad;
+  MatrixXd W1 = WgtBias["W1"];
+  MatrixXd W2 = WgtBias["W2"];
+  VectorXd b1 = WgtBias["b1"];
+  VectorXd b2 = WgtBias["b2"];
+  
+  // means no mini-batch
+  std::map<int, VectorXd> a;
+  std::map<int, VectorXd> z;
+  std::map<int, VectorXd> sigma;
+  a[1] = data.col(index);
+  a[2] = sigmoid(z[2]);
+  VectorXd rho = a[2];  // Get rho first
+  z[3] = W2 * a[2] + b2;
+  a[3] = sigmoid(z[3]);
+  sigma[3] = (-(a[1]-a[3]).array() * (a[3].array()*(1-a[3].array()))).matrix();
+  VectorXd sparsity_sigma = -sparsity_param/g_rho.array() +\
+                        (1-sparsity_param)*(1-g_rho.array());
+  sigma[2] = (((W2.transpose()*sigma[3]).array() + beta*sparsity_sigma.array())*\
+             a[2].array()*(1-a[2].array())).matrix();
+  // gradient of that sample
+  MatrixXd W1_grad = sigma[2] * a[1].transpose();  
+  MatrixXd W2_grad = sigma[3] * a[2].transpose();  
+  VectorXd b1_grad = sigma[2];  
+  VectorXd b2_grad = sigma[3];  
+
+  WgtBiasGrad["W1"] = W1_grad;
+  WgtBiasGrad["W2"] = W2_grad;
+  WgtBiasGrad["b1"] = b1_grad;
+  WgtBiasGrad["b2"] = b2_grad;
+
+  return WgtBiasGrad;
+}
+
 // compute the stochastic gradient of the cost over each weight elem and bias elem
-// mini-batch is involved. If you don't need the mini-batch, simply assign a 1-D std::vector<int> into index_data
-std::map<string, MatrixXd> compute_stoc_grad(std::map<string, MatrixXd> WgtBias, MatrixXd& data,
-                                             int hidden_size, int visible_size, double lamb, double sparsity_param, 
-                                             double beta, vector<int> index_data){
+// mini-batch is involved. 
+std::map<string, MatrixXd> compute_mibt_stoc_grad(const std::map<string, MatrixXd> WgtBias, 
+                const MatrixXd& data, int hidden_size_lyr, int visible_size_lyr, 
+                double lamb, double sparsity_param, double beta, vector<int> index_data){
   size_t mini_batch_size = index_data.size();
   int i;
   std::map<string, MatrixXd> WgtBiasGrad;

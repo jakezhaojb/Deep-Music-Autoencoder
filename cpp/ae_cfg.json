@@ -1,0 +1,14 @@
+{
+  "input" : ,
+  "output" : ,
+  "alpha" : 0.01,
+  "beta" : 3,
+  "rounds" : 20,
+  "limit_s" : 2,
+  "mibt_size" : 20,
+  "lamb" : 0.001,
+  "sparsity_param" : 0.01,
+  "n_lyr" : 3,
+  "hidden_size" : [25,16,9],
+  "visible_size" : 64
+}

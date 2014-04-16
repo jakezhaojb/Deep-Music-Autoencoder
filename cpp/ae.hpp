@@ -16,14 +16,17 @@ namespace paracel{
 class autoencoder: public paracel::paralg{
 
  public:
-  autoencoder(paracel::Comm, string, string, string, string = "sgd", MatrixXd, int = 1, int = 0.01, bool = false, int = 0, bool = false, vector<int>, vector<int>, double = 0.001, double = 0.0001, double = 3., int = 1); // TO BE COMPLETED
+  autoencoder(paracel::Comm, string, string, string, string = "sgd", int = 1, int = 0.01, bool = false, int = 0, bool = false, vector<int>, vector<int>, double = 0.001, double = 0.0001, double = 3., int = 1); // TO BE COMPLETED
   virtual ~autoencoder();
 
   void downpour_sgd(int); // downpour stochastic gradient descent
   void distribute_bgd(int);          // conventional batch-gradient descent
   void downpour_sgd_mibt(int) // downpour stochastic gradient descent and mini-batch involved
   
-  virtual void train();
+  void local_parser(const vector<string> &, const char, bool = false);
+  void train(int);
+  void train(); // top function
+  void dump_result(int);
 
   // Included in sparse_autoencoder.h
   // compute cost function
@@ -46,6 +49,8 @@ class autoencoder: public paracel::paralg{
   std::vector<double> loss_error;
   std::vector<std::map<string, MatrixXd>> WgtBias;
   MatrixXd data;
+  vector< vector<double> > samples;
+  vector<int> labels; // if necessary
   double lamb;            // weight decay
   double sparsity_param;    // sparse KL comparison
   double beta;              // sparse penalty
@@ -56,5 +61,10 @@ class autoencoder: public paracel::paralg{
 };
 
 } // namespace paracel
+
+// convert Eigen::MatrixXd to std::vector<double>
+MatrixXd vec_to_mat(vector<vector<double> > &);
+VectorXd vec_to_mat(vector<double> &);
+vector<double> Vec_to_vec(MatrixXd &);
 
 #endif

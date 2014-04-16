@@ -8,13 +8,12 @@ namespace paracel{
 
 // construction function
 autoencoder::autoencoder(paracel::Comm comm, string hosts_dct_str,
-          string _input, string output, MatrixXd _data, string method, 
-          int _rounds, double _alpha, bool _debug, int limit_s, 
-          bool ssp_switch, vector<int> _hidden_size, vector<int> _visible_size, 
-          double _lamb, double _sparsity_param, double _beta, int _mibt_size) :
+          string _input, string output, string method, int _rounds, 
+          double _alpha, bool _debug, int limit_s, bool ssp_switch, 
+          vector<int> _hidden_size, vector<int> _visible_size, double _lamb, 
+          double _sparsity_param, double _beta, int _mibt_size) :
   paracel::paralg(hosts_dct_str, comm, output, _rounds, limit_s, ssp_switch),
   input(_input),
-  data(_data),
   learning_method(method),
   worker_id(comm.get_rank()),
   rounds(_rounds),
@@ -107,7 +106,7 @@ void autoencoder::distribute_bgd(int lyr){
 void autoencoder::downpour_sgd(int lyr){
   int data_sz = data.cols();
   int cnt = 0, read_batch = data_sz/ 1000, update_batch = data_sz / 100;
-  assert(lyr > 0 && lyr < layers && "Input layer not qualified!");
+  assert( (lyr > 0 && lyr < layers) && "Input layer not qualified!");
   if (read_batch == 0) { read_batch = 10; }
   if (update_batch == 0) { update_batch = 10; }
   // Reference operator
@@ -180,7 +179,7 @@ void autoencoder::downpour_sgd(int lyr){
 void autoencoder::downpour_sgd_mibt(int lyr){
   int data_sz = data.cols();
   int mibt_cnt = 0, read_batch = data_sz / (mibt_size*100), update_batch = data_sz / (mibt_size*100);
-  assert(lyr > 0 && lyr < layers && "Input layer not qualified!");
+  assert( (lyr > 0 && lyr < layers) && "Input layer not qualified!");
   if (read_batch == 0) { read_batch = 10; }
   if (update_batch == 0) { update_batch = 10; }
   // Reference operator
@@ -193,6 +192,7 @@ void autoencoder::downpour_sgd_mibt(int lyr){
   for (int i = 0; i < data.cols(); i++) {
     idx.push_back(i);
   }
+  // ABSOULTE PATH
   paracel_register_bupdate("./update.so", 
       "ae_update");
   std::map<string, MatrixXd> delta;
@@ -263,11 +263,11 @@ void autoencoder::downpour_sgd_mibt(int lyr){
   WgtBias_lyr["b2"] = paracel_read<MatrixXd>("b2");
 }
 
-void autoencoder::train(){
-  // init data, TO BE UPDATED
-  //auto lines = paracel_load(input);
-  //local_parser(lines); 
-  //sync();
+
+void autoencoder::train(int lyr){
+  auto lines = paracel_load(input);
+  local_parser(lines); 
+  sync();
   if (learning_method == "dbgd") {
     std::cout << "chose distributed batch gradient descent" << std::endl;
     set_total_iters(rounds); // default value
@@ -291,6 +291,98 @@ void autoencoder::train(){
     return;
   }
   sync();
+}
+
+
+void autoencoder::train(){
+  // top function
+  for (int i = 0; i < n_lyr; i++) {
+    train(i);
+    dump_result(i);
+  }
+  std::cout << "Mission complete" << std::endl;
+}
+
+
+void autoencoder::local_parser(const vector<string> & linelst, const char sep = ',', bool spv){
+  samples.resize(0);
+  labels.resize(0);
+  if (spv) {  // supervised
+    for (auto & line: linelst) {
+      vector<double> tmp;
+      auto linev = paracel::str_split(line, sep);
+      // WHY???
+      tmp.push_back(1.);  
+      for (size_t i = 0; i < linev.size() - 1; i++) {
+        tmp.push_back(std::stod(linev[i]));
+      }
+      samples.push_back(tmp);
+      labels.push_back(std::stod(linev.back()));
+    } // traverse file
+  } else {  // unsupervised
+    vector<double> tmp;
+    auto linev = paracel::str_split(line, sep);
+    // WHY??
+    tmp.push_back(1.);
+    for (size_t i = 0; i < linev.size(); i++) {
+      tmp.push_back(std::stod(linev[i]));
+    }
+    samples.push_back(tmp);
+  }
+  data = vec_to_mat(samples).T;  // transpose is needed, since the data is sliced by-row 
+                                 // and samples are stored by-column in variable "data".
+}
+
+
+MatrixXd autoencoder::vec_to_mat(vector< vector<double> > v){
+  MatrixXd m(v.size(), v[0].size());
+  for (int i = 0; i < v.size(); i++) {
+    for (int j = 0; j < v[0].size(); j++) {
+      m(i, j) = v[i][j];
+    }
+  }
+  return m;
+}
+
+
+VectorXd autoencoder::vec_to_mat(vector<double> v){
+  VectorXd m(v.size());
+  for (int i = 0; i < v.size(); i++) {
+    m(i) = v[i];
+  }
+  return m;
+}
+
+
+vector<double> autoencoder::Vec_to_vec(MatrixXd & m){
+  assert( (m.cols()==1 || m.rows() == 1), "Input of Vec_to_vec should be a Vector or RowVector");
+  vector<double> v(m.size());
+  for (int i = 0; i < m.size(); i++) {
+    v[i] = m(i);
+  }
+  return v;
+}
+
+
+void autoencoder::dump_result(int lyr){
+  if (get_worker_id() == 0) {
+    for (i = 0; i < WgtBias[lyr]["W1"].rows(); i++) {
+      paracel_dump_vector(Vec_to_vec(WgtBias[lyr]["W1"].row(i)), 
+            (std::to_string(lyr) + "_" + "ae_W1_"), ",", false);
+    }
+    for (i = 0; i < WgtBias[lyr]["W2"].rows(); i++) {
+      paracel_dump_vector(Vec_to_vec(WgtBias[lyr]["W2"].row(i)), 
+            (std::to_string(lyr) + "_" + "ae_W2_"), ",", false);
+    }
+    for (i = 0; i < WgtBias[lyr]["b1"].rows(); i++) {
+      paracel_dump_vector(Vec_to_vec(WgtBias[lyr]["b1"].row(i)), 
+            (std::to_string(lyr) + "_" + "ae_b1_"), ",", false);
+    }
+    for (i = 0; i < WgtBias[lyr]["b2"].rows(); i++) {
+      paracel_dump_vector(Vec_to_vec(WgtBias[lyr]["b2"].row(i)), 
+            (std::to_string(lyr) + "_" + "ae_b2_"), ",", false);
+    }
+  }
 }
 
 } // namespace paracel

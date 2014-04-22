@@ -1,10 +1,6 @@
-#include <string>
-#include <map>
 #include </mfs/user/zhaojunbo/Eigen/Dense>
 #include "proxy.hpp"
 #include "paracel_types.hpp"
-
-using std::string;
 
 extern "C"{
   extern paracel::update_result ae_update;

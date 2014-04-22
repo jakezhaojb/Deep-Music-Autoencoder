@@ -287,10 +287,10 @@ int main(int argc, const char *argv[])
   std::random_shuffle(in.begin(), in.end());
   in.erase(in.begin()+10, in.end());
   auto sgd = compute_stoc_grad(wb, data, 25, 64, 0.0001, 0.01, 3, in);
-  //std::cout << sgd["W1"] << std::endl;
-  //std::cout << sgd["W2"] << std::endl;
-  //std::cout << sgd["b1"] << std::endl;
-  //std::cout << sgd["b2"] << std::endl;
+  std::cout << sgd["W1"] << std::endl;
+  std::cout << sgd["W2"] << std::endl;
+  std::cout << sgd["b1"] << std::endl;
+  std::cout << sgd["b2"] << std::endl;
   //std::cout << "Mean: " << std::endl;
   //std::cout << (sgd["W1"].mean()+sgd["W2"].mean()+ sgd["b1"].mean()+ sgd["b2"].mean())/4.0f << std::endl;
   return 0;

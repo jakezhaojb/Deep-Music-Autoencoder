@@ -8,7 +8,7 @@
 #include <vector>
 #include <string>
 #include <cassert>
-#include <std::map>
+#include <map>
 
 // global
 Eigen::VectorXd g_rho;

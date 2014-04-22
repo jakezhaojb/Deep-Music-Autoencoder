@@ -265,6 +265,7 @@ void autoencoder::downpour_sgd_mibt(int lyr){
 
 
 void autoencoder::train(int lyr){
+  int i;
   auto lines = paracel_load(input);
   local_parser(lines); 
   sync();
@@ -320,14 +321,16 @@ void autoencoder::local_parser(const vector<string> & linelst, const char sep = 
       labels.push_back(std::stod(linev.back()));
     } // traverse file
   } else {  // unsupervised
-    vector<double> tmp;
-    auto linev = paracel::str_split(line, sep);
-    // WHY??
-    tmp.push_back(1.);
-    for (size_t i = 0; i < linev.size(); i++) {
-      tmp.push_back(std::stod(linev[i]));
+    for (auto & line : linelist) {
+      vector<double> tmp;
+      auto linev = paracel::str_split(line, sep);
+      // WHY??
+      tmp.push_back(1.);
+      for (size_t i = 0; i < linev.size(); i++) {
+        tmp.push_back(std::stod(linev[i]));
+      }
+      samples.push_back(tmp);
     }
-    samples.push_back(tmp);
   }
   data = vec_to_mat(samples).T;  // transpose is needed, since the data is sliced by-row 
                                  // and samples are stored by-column in variable "data".
@@ -365,6 +368,7 @@ vector<double> autoencoder::Vec_to_vec(MatrixXd & m){
 
 
 void autoencoder::dump_result(int lyr){
+  int i;
   if (get_worker_id() == 0) {
     for (i = 0; i < WgtBias[lyr]["W1"].rows(); i++) {
       paracel_dump_vector(Vec_to_vec(WgtBias[lyr]["W1"].row(i)), 

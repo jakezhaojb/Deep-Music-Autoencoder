@@ -10,7 +10,9 @@
 #include "sparse_autoencoder.h"
 
 using namespace std;
-using namespace Eigen;
+//using namespace Eigen;
+using Eigen::MatrixXd;
+using Eigen::VectorXd;
 
 namespace paracel{
 

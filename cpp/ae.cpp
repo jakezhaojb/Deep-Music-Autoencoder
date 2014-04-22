@@ -24,7 +24,7 @@ autoencoder::autoencoder(paracel::Comm comm, string hosts_dct_str,
   beta(_beta),
   mibt_size(_mibt_size) {
     int i;
-    assert(_hidden_size.size()() == _visible_size.size());
+    assert(_hidden_size.size() == _visible_size.size());
     n_lyr = _hidden_size.size();
     hidden_size.assign(_hidden_size.begin(), _hidden_size.end());
     visible_size.assign(_visible_size.begin(), _visible_size.end());
@@ -51,20 +51,19 @@ std::map<string, MatrixXd> autoencoder::ae_batch_grad(int lyr) const{
 
 
 // compute the stochastic gradient
-std::map<string, MatrixXd> autoencoder::ae_stoc_grad(int lyr, int index){
+std::map<string, MatrixXd> autoencoder::ae_stoc_grad(int lyr, int index) const {
   return compute_stoc_grad(WgtBias[lyr], data, hidden_size[lyr], visible_size[lyr], lamb, sparsity_param, beta, index);
 }
 
 
 // compute the mini-batch stochastic gradient
-std::map<string, MatrixXd> autoencoder::ae_mibt_stoc_grad(int lyr, vector<int> index_data){
+std::map<string, MatrixXd> autoencoder::ae_mibt_stoc_grad(int lyr, vector<int> index_data) const {
   return compute_mibt_stoc_grad(WgtBias[lyr], data, hidden_size[lyr], visible_size[lyr], lamb, sparsity_param, beta, index_data);
 }
 
 
 // distributed bgd
 void autoencoder::distribute_bgd(int lyr){
-  int data_sz = data.cols();
   std::map<string, MatrixXd>& WgtBias_lyr = WgtBias[lyr] ;
   paracel_write("W1", WgtBias_lyr["W1"]);
   paracel_write("W2", WgtBias_lyr["W2"]);
@@ -84,7 +83,7 @@ void autoencoder::distribute_bgd(int lyr){
     delta["b1"] *= alpha;
     delta["b2"] *= alpha;
     if (debug) {
-      loss_error.push_back(compute_cost(lyr));
+      loss_error.push_back(ae_cost(lyr));
     }
     // push
     paracel_bupdate("W1", delta["W1"]);
@@ -106,7 +105,7 @@ void autoencoder::distribute_bgd(int lyr){
 void autoencoder::downpour_sgd(int lyr){
   int data_sz = data.cols();
   int cnt = 0, read_batch = data_sz/ 1000, update_batch = data_sz / 100;
-  assert( (lyr > 0 && lyr < layers) && "Input layer not qualified!");
+  assert( (lyr > 0 && lyr < n_lyr) && "Input layer not qualified!");
   if (read_batch == 0) { read_batch = 10; }
   if (update_batch == 0) { update_batch = 10; }
   // Reference operator
@@ -149,7 +148,7 @@ void autoencoder::downpour_sgd(int lyr){
       WgtBias_lyr["b1"] += alpha * WgtBias_grad["b1"];
       WgtBias_lyr["b2"] += alpha * WgtBias_grad["b2"];
       if (debug) {
-        loss_error.push_back(compute_cost(lyr));
+        loss_error.push_back(ae_cost(lyr));
       }
       if ( (cnt % update_batch == 0) || (cnt == (int)idx.size() - 1) ) {
         delta["W1"] = WgtBias_lyr["W1"] - WgtBias_lyr_old["W1"];
@@ -179,7 +178,7 @@ void autoencoder::downpour_sgd(int lyr){
 void autoencoder::downpour_sgd_mibt(int lyr){
   int data_sz = data.cols();
   int mibt_cnt = 0, read_batch = data_sz / (mibt_size*100), update_batch = data_sz / (mibt_size*100);
-  assert( (lyr > 0 && lyr < layers) && "Input layer not qualified!");
+  assert( (lyr > 0 && lyr < n_lyr) && "Input layer not qualified!");
   if (read_batch == 0) { read_batch = 10; }
   if (update_batch == 0) { update_batch = 10; }
   // Reference operator
@@ -238,7 +237,7 @@ void autoencoder::downpour_sgd_mibt(int lyr){
       WgtBias_lyr["b1"] += alpha * WgtBias_grad["b1"];
       WgtBias_lyr["b2"] += alpha * WgtBias_grad["b2"];
       if (debug) {
-        loss_error.push_back(compute_cost(lyr));
+        loss_error.push_back(ae_cost(lyr));
       }
       if ( (mibt_cnt % update_batch == 0) || (mibt_cnt == (int)mibt_idx.size()-1) ) {
         delta["W1"] = WgtBias_lyr["W1"] - WgtBias_lyr_old["W1"];
@@ -321,7 +320,7 @@ void autoencoder::local_parser(const vector<string> & linelst, const char sep = 
       labels.push_back(std::stod(linev.back()));
     } // traverse file
   } else {  // unsupervised
-    for (auto & line : linelist) {
+    for (auto & line : linelst) {
       vector<double> tmp;
       auto linev = paracel::str_split(line, sep);
       // WHY??

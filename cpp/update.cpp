@@ -12,7 +12,7 @@ extern "C"{
 }
 
 MatrixXd local_update(MatrixXd a, MatrixXd b){
-  r = a + b;
+  MatrixXd r = a + b;
   return r;
 }
 

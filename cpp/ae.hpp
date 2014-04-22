@@ -3,16 +3,14 @@
 
 #include <string>
 #include <vector>
-#include <stdlib.h>
+#include <cstdlib>
 #include </mfs/user/zhaojunbo/Eigen/Dense>
 #include "ps.hpp"
 #include "utils.hpp"
 #include "sparse_autoencoder.h"
 
 using namespace std;
-//using namespace Eigen;
-using Eigen::MatrixXd;
-using Eigen::VectorXd;
+using namespace Eigen;
 
 namespace paracel{
 

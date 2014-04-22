@@ -2,17 +2,19 @@
 #define _SPARSE_AUTOENCODER_H
 
 #include <iostream>
-#include <math.h>
+#include <cmath>
 #include <algorithm>
 #include </mfs/user/zhaojunbo/Eigen/Dense>
 #include <vector>
 #include <string>
-#include <assert.h>
+#include <cassert>
 #include <map>
 
 using std::vector;
 using std::string;
-using namespace Eigen;
+using std::map;
+using Eigen::MatrixXd;
+using Eigen::VectorXd;
 
 // global
 VectorXd g_rho;

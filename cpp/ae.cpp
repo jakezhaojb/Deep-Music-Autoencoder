@@ -8,10 +8,10 @@ namespace paracel{
 
 // construction function
 autoencoder::autoencoder(paracel::Comm comm, string hosts_dct_str,
-          string _input, string output, string method, int _rounds, 
+          string _input, string output, vector<int> _hidden_size,
+          vector<int> _visible_size, string method, int _rounds, 
           double _alpha, bool _debug, int limit_s, bool ssp_switch, 
-          vector<int> _hidden_size, vector<int> _visible_size, double _lamb, 
-          double _sparsity_param, double _beta, int _mibt_size) :
+          double _lamb, double _sparsity_param, double _beta, int _mibt_size) :
   paracel::paralg(hosts_dct_str, comm, output, _rounds, limit_s, ssp_switch),
   input(_input),
   learning_method(method),
@@ -304,7 +304,7 @@ void autoencoder::train(){
 }
 
 
-void autoencoder::local_parser(const vector<string> & linelst, const char sep = ',', bool spv){
+void autoencoder::local_parser(const vector<string> & linelst, const char sep, bool spv){
   samples.resize(0);
   labels.resize(0);
   if (spv) {  // supervised
@@ -331,12 +331,12 @@ void autoencoder::local_parser(const vector<string> & linelst, const char sep = 
       samples.push_back(tmp);
     }
   }
-  data = vec_to_mat(samples).T;  // transpose is needed, since the data is sliced by-row 
+  data = vec_to_mat(samples).transpose();  // transpose is needed, since the data is sliced by-row 
                                  // and samples are stored by-column in variable "data".
 }
 
 
-MatrixXd autoencoder::vec_to_mat(vector< vector<double> > v){
+MatrixXd vec_to_mat(vector< vector<double> > v){
   MatrixXd m(v.size(), v[0].size());
   for (int i = 0; i < v.size(); i++) {
     for (int j = 0; j < v[0].size(); j++) {
@@ -347,7 +347,7 @@ MatrixXd autoencoder::vec_to_mat(vector< vector<double> > v){
 }
 
 
-VectorXd autoencoder::vec_to_mat(vector<double> v){
+VectorXd vec_to_mat(vector<double> v){
   VectorXd m(v.size());
   for (int i = 0; i < v.size(); i++) {
     m(i) = v[i];
@@ -356,11 +356,11 @@ VectorXd autoencoder::vec_to_mat(vector<double> v){
 }
 
 
-vector<double> autoencoder::Vec_to_vec(MatrixXd & m){
+vector<double> Vec_to_vec(MatrixXd & m){
   assert( (m.cols()==1 || m.rows() == 1) && "Input of Vec_to_vec should be a Vector or RowVector");
-  vector<double> v(m.size());
+  vector<double> v;
   for (int i = 0; i < m.size(); i++) {
-    v[i] = m(i);
+    v.push_back(m(i));
   }
   return v;
 }
@@ -371,19 +371,19 @@ void autoencoder::dump_result(int lyr){
   if (get_worker_id() == 0) {
     for (i = 0; i < WgtBias[lyr]["W1"].rows(); i++) {
       paracel_dump_vector(Vec_to_vec(WgtBias[lyr]["W1"].row(i)), 
-            (std::to_string(lyr) + "_" + "ae_W1_"), ",", false);
+            ("ae_layer_" + std::to_string(lyr) + "_W1_"), ",", false);
     }
     for (i = 0; i < WgtBias[lyr]["W2"].rows(); i++) {
       paracel_dump_vector(Vec_to_vec(WgtBias[lyr]["W2"].row(i)), 
-            (std::to_string(lyr) + "_" + "ae_W2_"), ",", false);
+            ("ae_layer_" + std::to_string(lyr) + "_W2_"), ",", false);
     }
     for (i = 0; i < WgtBias[lyr]["b1"].rows(); i++) {
       paracel_dump_vector(Vec_to_vec(WgtBias[lyr]["b1"].row(i)), 
-            (std::to_string(lyr) + "_" + "ae_b1_"), ",", false);
+            ("ae_layer_" + std::to_string(lyr) + "_b1_"), ",", false);
     }
     for (i = 0; i < WgtBias[lyr]["b2"].rows(); i++) {
       paracel_dump_vector(Vec_to_vec(WgtBias[lyr]["b2"].row(i)), 
-            (std::to_string(lyr) + "_" + "ae_b2_"), ",", false);
+            ("ae_layer_" + std::to_string(lyr) + "_b2_"), ",", false);
     }
   }
 }

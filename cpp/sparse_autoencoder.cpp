@@ -257,6 +257,7 @@ std::map<string, MatrixXd> compute_mibt_stoc_grad(const std::map<string, MatrixX
   return WgtBiasGrad;
 }
 
+/*
 int main(int argc, const char *argv[])
 {
   auto wb = initialize_parameter(64, 25);
@@ -293,4 +294,4 @@ int main(int argc, const char *argv[])
   //std::cout << "Mean: " << std::endl;
   //std::cout << (sgd["W1"].mean()+sgd["W2"].mean()+ sgd["b1"].mean()+ sgd["b2"].mean())/4.0f << std::endl;
   return 0;
-}
+} */

@@ -4,15 +4,14 @@
 #include "proxy.hpp"
 #include "paracel_types.hpp"
 
-using Eigen::MatrixXd;
 using std::string;
 
 extern "C"{
   extern paracel::update_result ae_update;
 }
 
-MatrixXd local_update(MatrixXd a, MatrixXd b){
-  MatrixXd r = a + b;
+Eigen::MatrixXd local_update(Eigen::MatrixXd a, Eigen::MatrixXd b){
+  Eigen::MatrixXd r = a + b;
   return r;
 }
 

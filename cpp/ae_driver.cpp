@@ -41,8 +41,8 @@ int main(int argc, const char *argv[])
   vector<int> hidden_size = pt.get<vector<int> >("hidden_size");
   vector<int> visible_size = pt.get<vector<int> >("visible_size");
   
-  paracel::autoencoder ae_solver(comm, FLAGS_server_info, input, output, "dsgd", rounds, alpha, false, limit_s,
-            true, hidden_size, visible_size, lamb, sparsity_param, beta, mibt_size);
+  paracel::autoencoder ae_solver(comm, FLAGS_server_info, input, output, hidden_size, visible_size, "dsgd", rounds, alpha, false, limit_s,
+            true, lamb, sparsity_param, beta, mibt_size);
   ae_solver.train();
 
   return 0;

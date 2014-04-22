@@ -1,4 +1,4 @@
-#ifndef _A_E_HPP_
+#ifndef _A_E_HPP
 #define _A_E_HPP_
 
 #include <string>
@@ -9,22 +9,25 @@
 #include "utils.hpp"
 #include "sparse_autoencoder.h"
 
-using namespace std;
-using namespace Eigen;
+using std::vector;
+using std::string;
+using std::map;
+using Eigen::VectorXd;
+using Eigen::MatrixXd;
 
 namespace paracel{
 
 class autoencoder: public paracel::paralg{
 
  public:
-  autoencoder(paracel::Comm, string, string, string, string = "sgd", int = 1, double = 0.01, bool = false, int = 0, bool = false, vector<int>, vector<int>, double = 0.001, double = 0.0001, double = 3., int = 1); // TO BE COMPLETED
+  autoencoder(paracel::Comm, string, string, string, vector<int>, vector<int>, string = "sgd", int = 1, double = 0.01, bool = false, int = 0, bool = false, double = 0.001, double = 0.0001, double = 3., int = 1); // TO BE COMPLETED
   virtual ~autoencoder();
 
   void downpour_sgd(int); // downpour stochastic gradient descent
   void distribute_bgd(int);          // conventional batch-gradient descent
-  void downpour_sgd_mibt(int) // downpour stochastic gradient descent and mini-batch involved
+  void downpour_sgd_mibt(int); // downpour stochastic gradient descent and mini-batch involved
   
-  void local_parser(const vector<string> &, const char, bool = false);
+  void local_parser(const vector<string> &, const char = ',', bool = false);
   void train(int);
   void train(); // top function
   void dump_result(int);
@@ -37,7 +40,7 @@ class autoencoder: public paracel::paralg{
   // back-propogation stochastic gradient compute
   map<string, MatrixXd> ae_stoc_grad(int, int) const;
   // BP with Mini-batch
-  std::map<string, MatrixXd> ae_mibt_stoc_grad(int, vector<int>) const;
+  map<string, MatrixXd> ae_mibt_stoc_grad(int, vector<int>) const;
 
  private:
   string input;
@@ -48,7 +51,7 @@ class autoencoder: public paracel::paralg{
   string learning_method;
   bool debug = false;
   std::vector<double> loss_error;
-  std::vector<std::map<string, MatrixXd>> WgtBias;
+  std::vector<std::map<string, MatrixXd> > WgtBias;
   MatrixXd data;
   vector< vector<double> > samples;
   vector<int> labels; // if necessary

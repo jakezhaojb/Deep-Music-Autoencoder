@@ -3,6 +3,7 @@
 
 #include <string>
 #include <vector>
+#include <stdlib.h>
 #include </mfs/user/zhaojunbo/Eigen/Dense>
 #include "ps.hpp"
 #include "utils.hpp"
@@ -16,7 +17,7 @@ namespace paracel{
 class autoencoder: public paracel::paralg{
 
  public:
-  autoencoder(paracel::Comm, string, string, string, string = "sgd", int = 1, int = 0.01, bool = false, int = 0, bool = false, vector<int>, vector<int>, double = 0.001, double = 0.0001, double = 3., int = 1); // TO BE COMPLETED
+  autoencoder(paracel::Comm, string, string, string, string = "sgd", int = 1, double = 0.01, bool = false, int = 0, bool = false, vector<int>, vector<int>, double = 0.001, double = 0.0001, double = 3., int = 1); // TO BE COMPLETED
   virtual ~autoencoder();
 
   void downpour_sgd(int); // downpour stochastic gradient descent
@@ -58,7 +59,7 @@ class autoencoder: public paracel::paralg{
   vector<int> hidden_size;
   vector<int> visible_size;
 
-};
+}; // class
 
 } // namespace paracel
 

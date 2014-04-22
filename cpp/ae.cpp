@@ -7,9 +7,9 @@
 namespace paracel{
 
 // construction function
-autoencoder::autoencoder(paracel::Comm comm, string hosts_dct_str,
-          string _input, string output, vector<int> _hidden_size,
-          vector<int> _visible_size, string method, int _rounds, 
+autoencoder::autoencoder(paracel::Comm comm, std::string hosts_dct_str,
+          std::string _input, std::string output, std::vector<int> _hidden_size,
+          std::vector<int> _visible_size, std::string method, int _rounds, 
           double _alpha, bool _debug, int limit_s, bool ssp_switch, 
           double _lamb, double _sparsity_param, double _beta, int _mibt_size) :
   paracel::paralg(hosts_dct_str, comm, output, _rounds, limit_s, ssp_switch),
@@ -45,38 +45,38 @@ double autoencoder::ae_cost(int lyr) const {
 
 
 // compute the batch gradient
-std::map<string, MatrixXd> autoencoder::ae_batch_grad(int lyr) const{
+std::map<std::string, Eigen::MatrixXd> autoencoder::ae_batch_grad(int lyr) const{
   return compute_batch_grad(WgtBias[lyr], data, hidden_size[lyr], visible_size[lyr], lamb, sparsity_param, beta);
 }
 
 
 // compute the stochastic gradient
-std::map<string, MatrixXd> autoencoder::ae_stoc_grad(int lyr, int index) const {
+std::map<std::string, Eigen::MatrixXd> autoencoder::ae_stoc_grad(int lyr, int index) const {
   return compute_stoc_grad(WgtBias[lyr], data, hidden_size[lyr], visible_size[lyr], lamb, sparsity_param, beta, index);
 }
 
 
 // compute the mini-batch stochastic gradient
-std::map<string, MatrixXd> autoencoder::ae_mibt_stoc_grad(int lyr, vector<int> index_data) const {
+std::map<std::string, Eigen::MatrixXd> autoencoder::ae_mibt_stoc_grad(int lyr, std::vector<int> index_data) const {
   return compute_mibt_stoc_grad(WgtBias[lyr], data, hidden_size[lyr], visible_size[lyr], lamb, sparsity_param, beta, index_data);
 }
 
 
 // distributed bgd
 void autoencoder::distribute_bgd(int lyr){
-  std::map<string, MatrixXd>& WgtBias_lyr = WgtBias[lyr] ;
+  std::map<std::string, Eigen::MatrixXd>& WgtBias_lyr = WgtBias[lyr] ;
   paracel_write("W1", WgtBias_lyr["W1"]);
   paracel_write("W2", WgtBias_lyr["W2"]);
   paracel_write("b1", WgtBias_lyr["b1"]);
   paracel_write("b2", WgtBias_lyr["b2"]);
   paracel_register_bupdate("./update.so", 
       "ae_update");
-  std::map<string, MatrixXd> delta;
+  std::map<std::string, Eigen::MatrixXd> delta;
   for (int rd = 0; rd < rounds; rd++) {
-    WgtBias_lyr["W1"] = paracel_read<MatrixXd>("W1");
-    WgtBias_lyr["W2"] = paracel_read<MatrixXd>("W2");
-    WgtBias_lyr["b1"] = paracel_read<MatrixXd>("b1");
-    WgtBias_lyr["b2"] = paracel_read<MatrixXd>("b2");
+    WgtBias_lyr["W1"] = paracel_read<Eigen::MatrixXd>("W1");
+    WgtBias_lyr["W2"] = paracel_read<Eigen::MatrixXd>("W2");
+    WgtBias_lyr["b1"] = paracel_read<Eigen::MatrixXd>("b1");
+    WgtBias_lyr["b2"] = paracel_read<Eigen::MatrixXd>("b2");
     delta = ae_batch_grad(lyr);
     delta["W1"] *= alpha;
     delta["W2"] *= alpha;
@@ -94,10 +94,10 @@ void autoencoder::distribute_bgd(int lyr){
     std::cout << "worker" << get_worker_id() << "at the end of rd" << rd << std::endl;
   } // rounds
   // last pull
-  WgtBias_lyr["W1"] = paracel_read<MatrixXd>("W1");
-  WgtBias_lyr["W2"] = paracel_read<MatrixXd>("W2");
-  WgtBias_lyr["b1"] = paracel_read<MatrixXd>("b1");
-  WgtBias_lyr["b2"] = paracel_read<MatrixXd>("b2");
+  WgtBias_lyr["W1"] = paracel_read<Eigen::MatrixXd>("W1");
+  WgtBias_lyr["W2"] = paracel_read<Eigen::MatrixXd>("W2");
+  WgtBias_lyr["b1"] = paracel_read<Eigen::MatrixXd>("b1");
+  WgtBias_lyr["b2"] = paracel_read<Eigen::MatrixXd>("b2");
 }
 
 
@@ -109,40 +109,40 @@ void autoencoder::downpour_sgd(int lyr){
   if (read_batch == 0) { read_batch = 10; }
   if (update_batch == 0) { update_batch = 10; }
   // Reference operator
-  std::map<string, MatrixXd>& WgtBias_lyr = WgtBias[lyr] ;
+  std::map<std::string, Eigen::MatrixXd>& WgtBias_lyr = WgtBias[lyr] ;
   paracel_write("W1", WgtBias_lyr["W1"]);
   paracel_write("W2", WgtBias_lyr["W2"]);
   paracel_write("b1", WgtBias_lyr["b1"]);
   paracel_write("b2", WgtBias_lyr["b2"]);
-  vector<int> idx;
+  std::vector<int> idx;
   for (int i = 0; i < data.cols(); i++) {
     idx.push_back(i);
   }
   paracel_register_bupdate("./update.so", 
       "ae_update");
-  std::map<string, MatrixXd> delta;
+  std::map<std::string, Eigen::MatrixXd> delta;
 
   for (int rd = 0; rd < rounds; rd++) {
     std::random_shuffle(idx.begin(), idx.end());
 
     // init read
-    WgtBias_lyr["W1"] = paracel_read<MatrixXd>("W1");
-    WgtBias_lyr["W2"] = paracel_read<MatrixXd>("W2");
-    WgtBias_lyr["b1"] = paracel_read<MatrixXd>("b1");
-    WgtBias_lyr["b2"] = paracel_read<MatrixXd>("b2");
-    std::map<string, MatrixXd> WgtBias_lyr_old(WgtBias_lyr);
+    WgtBias_lyr["W1"] = paracel_read<Eigen::MatrixXd>("W1");
+    WgtBias_lyr["W2"] = paracel_read<Eigen::MatrixXd>("W2");
+    WgtBias_lyr["b1"] = paracel_read<Eigen::MatrixXd>("b1");
+    WgtBias_lyr["b2"] = paracel_read<Eigen::MatrixXd>("b2");
+    std::map<std::string, Eigen::MatrixXd> WgtBias_lyr_old(WgtBias_lyr);
 
     // traverse data
     cnt = 0;
     for (auto sample_id : idx) {
       if ( (cnt % read_batch == 0) || (cnt == (int)idx.size() - 1) ) {
-        WgtBias_lyr["W1"] = paracel_read<MatrixXd>("W1");
-        WgtBias_lyr["W2"] = paracel_read<MatrixXd>("W2");
-        WgtBias_lyr["b1"] = paracel_read<MatrixXd>("b1");
-        WgtBias_lyr["b2"] = paracel_read<MatrixXd>("b2");
+        WgtBias_lyr["W1"] = paracel_read<Eigen::MatrixXd>("W1");
+        WgtBias_lyr["W2"] = paracel_read<Eigen::MatrixXd>("W2");
+        WgtBias_lyr["b1"] = paracel_read<Eigen::MatrixXd>("b1");
+        WgtBias_lyr["b2"] = paracel_read<Eigen::MatrixXd>("b2");
         WgtBias_lyr_old = WgtBias_lyr;
       }
-      std::map<string, MatrixXd> WgtBias_grad = ae_stoc_grad(lyr, sample_id);
+      std::map<std::string, Eigen::MatrixXd> WgtBias_grad = ae_stoc_grad(lyr, sample_id);
       WgtBias_lyr["W1"] += alpha * WgtBias_grad["W1"];
       WgtBias_lyr["W2"] += alpha * WgtBias_grad["W2"];
       WgtBias_lyr["b1"] += alpha * WgtBias_grad["b1"];
@@ -167,10 +167,10 @@ void autoencoder::downpour_sgd(int lyr){
     std::cout << "worker" << get_worker_id() << "at the end of rd" << rd << std::endl;
   }  // rounds
   // last pull
-  WgtBias_lyr["W1"] = paracel_read<MatrixXd>("W1");
-  WgtBias_lyr["W2"] = paracel_read<MatrixXd>("W2");
-  WgtBias_lyr["b1"] = paracel_read<MatrixXd>("b1");
-  WgtBias_lyr["b2"] = paracel_read<MatrixXd>("b2");
+  WgtBias_lyr["W1"] = paracel_read<Eigen::MatrixXd>("W1");
+  WgtBias_lyr["W2"] = paracel_read<Eigen::MatrixXd>("W2");
+  WgtBias_lyr["b1"] = paracel_read<Eigen::MatrixXd>("b1");
+  WgtBias_lyr["b2"] = paracel_read<Eigen::MatrixXd>("b2");
 }
 
 
@@ -182,56 +182,56 @@ void autoencoder::downpour_sgd_mibt(int lyr){
   if (read_batch == 0) { read_batch = 10; }
   if (update_batch == 0) { update_batch = 10; }
   // Reference operator
-  std::map<string, MatrixXd>& WgtBias_lyr = WgtBias[lyr] ;
+  std::map<std::string, Eigen::MatrixXd>& WgtBias_lyr = WgtBias[lyr] ;
   paracel_write("W1", WgtBias_lyr["W1"]);
   paracel_write("W2", WgtBias_lyr["W2"]);
   paracel_write("b1", WgtBias_lyr["b1"]);
   paracel_write("b2", WgtBias_lyr["b2"]);
-  vector<int> idx;
+  std::vector<int> idx;
   for (int i = 0; i < data.cols(); i++) {
     idx.push_back(i);
   }
   // ABSOULTE PATH
   paracel_register_bupdate("./update.so", 
       "ae_update");
-  std::map<string, MatrixXd> delta;
+  std::map<std::string, Eigen::MatrixXd> delta;
 
   for (int rd = 0; rd < rounds; rd++) {
     std::random_shuffle(idx.begin(), idx.end());
-    vector<vector<int>> mibt_idx; // mini-batch id
+    std::vector<std::vector<int>> mibt_idx; // mini-batch id
     for (auto i = idx.begin(); ; i += mibt_size) {
       if (idx.end() - i < mibt_size) {
         if (idx.end() == i) {
           break;
         }else{
-          vector<int> tmp;
+          std::vector<int> tmp;
           tmp.assign(i, idx.end());
           mibt_idx.push_back(tmp);
         }
       }
-      vector<int> tmp;
+      std::vector<int> tmp;
       tmp.assign(i, i + mibt_size);
       // SUPPOSE IT TO BE NOT ACCUMULATED OVER WORKERS?
       mibt_idx.push_back(tmp);
     }
     // init push
-    WgtBias_lyr["W1"] = paracel_read<MatrixXd>("W1");
-    WgtBias_lyr["W2"] = paracel_read<MatrixXd>("W2");
-    WgtBias_lyr["b1"] = paracel_read<MatrixXd>("b1");
-    WgtBias_lyr["b2"] = paracel_read<MatrixXd>("b2");
-    std::map<string, MatrixXd> WgtBias_lyr_old(WgtBias_lyr);
+    WgtBias_lyr["W1"] = paracel_read<Eigen::MatrixXd>("W1");
+    WgtBias_lyr["W2"] = paracel_read<Eigen::MatrixXd>("W2");
+    WgtBias_lyr["b1"] = paracel_read<Eigen::MatrixXd>("b1");
+    WgtBias_lyr["b2"] = paracel_read<Eigen::MatrixXd>("b2");
+    std::map<std::string, Eigen::MatrixXd> WgtBias_lyr_old(WgtBias_lyr);
     
     // traverse data
     mibt_cnt = 0;
     for (auto mibt_sample_id : mibt_idx) {
       if ( (mibt_cnt % read_batch == 0) || (mibt_cnt == (int)mibt_idx.size()-1) ) {
-        WgtBias_lyr["W1"] = paracel_read<MatrixXd>("W1");
-        WgtBias_lyr["W2"] = paracel_read<MatrixXd>("W2");
-        WgtBias_lyr["b1"] = paracel_read<MatrixXd>("b1");
-        WgtBias_lyr["b2"] = paracel_read<MatrixXd>("b2");
+        WgtBias_lyr["W1"] = paracel_read<Eigen::MatrixXd>("W1");
+        WgtBias_lyr["W2"] = paracel_read<Eigen::MatrixXd>("W2");
+        WgtBias_lyr["b1"] = paracel_read<Eigen::MatrixXd>("b1");
+        WgtBias_lyr["b2"] = paracel_read<Eigen::MatrixXd>("b2");
         WgtBias_lyr_old = WgtBias_lyr;
       }
-      std::map<string, MatrixXd> WgtBias_grad = ae_mibt_stoc_grad(lyr, mibt_sample_id);
+      std::map<std::string, Eigen::MatrixXd> WgtBias_grad = ae_mibt_stoc_grad(lyr, mibt_sample_id);
       WgtBias_lyr["W1"] += alpha * WgtBias_grad["W1"];
       WgtBias_lyr["W2"] += alpha * WgtBias_grad["W2"];
       WgtBias_lyr["b1"] += alpha * WgtBias_grad["b1"];
@@ -256,10 +256,10 @@ void autoencoder::downpour_sgd_mibt(int lyr){
     std::cout << "worker" << get_worker_id() << "at the end of rd" << rd << std::endl;
   }  // rounds
   // last pull
-  WgtBias_lyr["W1"] = paracel_read<MatrixXd>("W1");
-  WgtBias_lyr["W2"] = paracel_read<MatrixXd>("W2");
-  WgtBias_lyr["b1"] = paracel_read<MatrixXd>("b1");
-  WgtBias_lyr["b2"] = paracel_read<MatrixXd>("b2");
+  WgtBias_lyr["W1"] = paracel_read<Eigen::MatrixXd>("W1");
+  WgtBias_lyr["W2"] = paracel_read<Eigen::MatrixXd>("W2");
+  WgtBias_lyr["b1"] = paracel_read<Eigen::MatrixXd>("b1");
+  WgtBias_lyr["b2"] = paracel_read<Eigen::MatrixXd>("b2");
 }
 
 
@@ -304,12 +304,12 @@ void autoencoder::train(){
 }
 
 
-void autoencoder::local_parser(const vector<string> & linelst, const char sep, bool spv){
+void autoencoder::local_parser(const std::vector<std::string> & linelst, const char sep, bool spv){
   samples.resize(0);
   labels.resize(0);
   if (spv) {  // supervised
     for (auto & line: linelst) {
-      vector<double> tmp;
+      std::vector<double> tmp;
       auto linev = paracel::str_split(line, sep);
       // WHY???
       tmp.push_back(1.);  
@@ -321,7 +321,7 @@ void autoencoder::local_parser(const vector<string> & linelst, const char sep, b
     } // traverse file
   } else {  // unsupervised
     for (auto & line : linelst) {
-      vector<double> tmp;
+      std::vector<double> tmp;
       auto linev = paracel::str_split(line, sep);
       // WHY??
       tmp.push_back(1.);
@@ -336,8 +336,8 @@ void autoencoder::local_parser(const vector<string> & linelst, const char sep, b
 }
 
 
-MatrixXd vec_to_mat(vector< vector<double> > v){
-  MatrixXd m(v.size(), v[0].size());
+Eigen::MatrixXd vec_to_mat(std::vector< std::vector<double> > v){
+  Eigen::MatrixXd m(v.size(), v[0].size());
   for (int i = 0; i < v.size(); i++) {
     for (int j = 0; j < v[0].size(); j++) {
       m(i, j) = v[i][j];
@@ -347,8 +347,8 @@ MatrixXd vec_to_mat(vector< vector<double> > v){
 }
 
 
-VectorXd vec_to_mat(vector<double> v){
-  VectorXd m(v.size());
+Eigen::VectorXd vec_to_mat(std::vector<double> v){
+  Eigen::VectorXd m(v.size());
   for (int i = 0; i < v.size(); i++) {
     m(i) = v[i];
   }
@@ -356,9 +356,9 @@ VectorXd vec_to_mat(vector<double> v){
 }
 
 
-vector<double> Vec_to_vec(MatrixXd & m){
+std::vector<double> Vec_to_vec(Eigen::MatrixXd & m){
   assert( (m.cols()==1 || m.rows() == 1) && "Input of Vec_to_vec should be a Vector or RowVector");
-  vector<double> v;
+  std::vector<double> v;
   for (int i = 0; i < m.size(); i++) {
     v.push_back(m(i));
   }

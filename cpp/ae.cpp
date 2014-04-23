@@ -13,9 +13,9 @@ autoencoder::autoencoder(paracel::Comm comm, string hosts_dct_str,
           double _alpha, bool _debug, int limit_s, bool ssp_switch, 
           double _lamb, double _sparsity_param, double _beta, int _mibt_size) :
   paracel::paralg(hosts_dct_str, comm, output, _rounds, limit_s, ssp_switch),
+  worker_id(comm.get_rank()),
   input(_input),
   learning_method(method),
-  worker_id(comm.get_rank()),
   rounds(_rounds),
   alpha(_alpha),
   debug(_debug),
@@ -23,7 +23,6 @@ autoencoder::autoencoder(paracel::Comm comm, string hosts_dct_str,
   sparsity_param(_sparsity_param),
   beta(_beta),
   mibt_size(_mibt_size) {
-    int i;
     assert(_hidden_size.size() == _visible_size.size());
     n_lyr = _hidden_size.size();
     hidden_size.assign(_hidden_size.begin(), _hidden_size.end());
@@ -44,10 +43,10 @@ void autoencoder::distribute_bgd(int lyr){
   paracel_register_bupdate("./update.so", 
       "ae_update");
   unordered_map<string, MatrixXd> delta;
-  delta["W1"] = 0;
-  delta["W2"] = 0;
-  delta["b1"] = 0;
-  delta["b2"] = 0;
+  delta["W1"] = MatrixXd::Zero(WgtBias[lyr].at("W1").rows(), WgtBias[lyr].at("W1").cols());
+  delta["W2"] = MatrixXd::Zero(WgtBias[lyr].at("W2").rows(), WgtBias[lyr].at("W2").cols());
+  delta["b1"] = VectorXd::Zero(WgtBias[lyr].at("b1").size());
+  delta["b2"] = VectorXd::Zero(WgtBias[lyr].at("b2").size());
   for (int rd = 0; rd < rounds; rd++) {
     WgtBias_lyr.at("W1") = paracel_read<MatrixXd>("W1");
     WgtBias_lyr.at("W2") = paracel_read<MatrixXd>("W2");
@@ -97,10 +96,10 @@ void autoencoder::downpour_sgd(int lyr){
   paracel_register_bupdate("./update.so", 
       "ae_update");
   unordered_map<string, MatrixXd> delta;
-  delta["W1"] = 0;
-  delta["W2"] = 0;
-  delta["b1"] = 0;
-  delta["b2"] = 0;
+  delta["W1"] = MatrixXd::Zero(WgtBias[lyr].at("W1").rows(), WgtBias[lyr].at("W1").cols());
+  delta["W2"] = MatrixXd::Zero(WgtBias[lyr].at("W2").rows(), WgtBias[lyr].at("W2").cols());
+  delta["b1"] = VectorXd::Zero(WgtBias[lyr].at("b1").size());
+  delta["b2"] = VectorXd::Zero(WgtBias[lyr].at("b2").size());
 
   for (int rd = 0; rd < rounds; rd++) {
     std::random_shuffle(idx.begin(), idx.end());
@@ -175,10 +174,10 @@ void autoencoder::downpour_sgd_mibt(int lyr){
   paracel_register_bupdate("./update.so", 
       "ae_update");
   unordered_map<string, MatrixXd> delta;
-  delta["W1"] = 0;
-  delta["W2"] = 0;
-  delta["b1"] = 0;
-  delta["b2"] = 0;
+  delta["W1"] = MatrixXd::Zero(WgtBias[lyr].at("W1").rows(), WgtBias[lyr].at("W1").cols());
+  delta["W2"] = MatrixXd::Zero(WgtBias[lyr].at("W2").rows(), WgtBias[lyr].at("W2").cols());
+  delta["b1"] = VectorXd::Zero(WgtBias[lyr].at("b1").size());
+  delta["b2"] = VectorXd::Zero(WgtBias[lyr].at("b2").size());
 
   for (int rd = 0; rd < rounds; rd++) {
     std::random_shuffle(idx.begin(), idx.end());

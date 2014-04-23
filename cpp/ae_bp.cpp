@@ -3,6 +3,8 @@
 #include <algorithm>
 #include <cassert>
 
+namespace paracel{
+
 // init
 void autoencoder::ae_init(){
   assert(WgtBias.size() == 0);
@@ -22,21 +24,21 @@ void autoencoder::ae_init(){
   }
 }
 
-MatrixXd autoencoder::acti_fun(string fun_name, const MatrixXd & non_acti_data){
+MatrixXd autoencoder::acti_fun(const MatrixXd & non_acti_data, string fun_name ) const {
   if (fun_name == "sigmoid") {
-    return ( (1.0 / (1 + exp(-x.array()))).matrix() ); 
+    return ( (1.0 / (1 + exp(-non_acti_data.array()))).matrix() ); 
   }
   else if (fun_name == "ReLU") {
     MatrixXd acti_data;
     for (int i = 0; i < non_acti_data.rows(); i++) {
       for (int j = 0; j < non_acti_data.cols(); j++) {
-        acti_data(i, j) = max(non_acti_data(i, j), 0);
+        acti_data(i, j) = max(non_acti_data(i, j), 0.);
       }
     }
     return acti_data;
   }
   else if (fun_name == "tanh") { 
-    ArrayXXd tmp = non_acti_data.array();
+    Eigen::ArrayXXd tmp = non_acti_data.array();
     return ( ((exp(tmp) - exp(-tmp)) / (exp(tmp) + exp(-tmp))).matrix() );
   }
   else{
@@ -62,9 +64,9 @@ double autoencoder::ae_cost(int lyr) const {
   for (i = 0; i < data.cols(); i++) {
     a[1] = data.col(i);
     z[2] = W1 * a[1] + b1;
-    a[2] = acti_fun("sigmoid", z[2]);
+    a[2] = acti_fun(z[2], "sigmoid");
     z[3] = W2 * a[2] + b2;
-    a[3] = acti_fun("sigmoid", z[3]);
+    a[3] = acti_fun(z[3], "sigmoid");
     cost += ((a[1]-a[3]).array().pow(2)/2).sum();
     g_rho += a[2];
   }
@@ -100,9 +102,9 @@ unordered_map<string, MatrixXd> autoencoder::ae_batch_grad(int lyr) const{
   for (int i = 0; i < data.cols(); i++) {
     a[1] = data.col(i);
     z[2] = W1 * a[1] + b1;
-    a[2] = acti_fun("sigmoid", z[2]);
+    a[2] = acti_fun(z[2], "sigmoid");
     z[3] = W2 * a[2] + b2;
-    a[3] = acti_fun("sigmoid", z[3]);
+    a[3] = acti_fun(z[3], "sigmoid");
     sigma[3] = (-(a[1]-a[3]).array() * (a[3].array()*(1-a[3].array()))).matrix();
     VectorXd sparsity_sigma = -sparsity_param/g_rho.array() +\
                           (1-sparsity_param)*(1-g_rho.array());
@@ -144,10 +146,10 @@ unordered_map<string, MatrixXd> autoencoder::ae_stoc_grad(int lyr, int index) co
   unordered_map<int, VectorXd> z;
   unordered_map<int, VectorXd> sigma;
   a[1] = data.col(index);
-  a[2] = acti_fun("sigmoid", z[2]);
+  a[2] = acti_fun(z[2], "sigmoid");
   VectorXd rho = a[2];  // Get rho first
   z[3] = W2 * a[2] + b2;
-  a[3] = acti_fun("sigmoid", z[3]);
+  a[3] = acti_fun(z[3], "sigmoid");
   sigma[3] = (-(a[1]-a[3]).array() * (a[3].array()*(1-a[3].array()))).matrix();
   VectorXd sparsity_sigma = -sparsity_param/g_rho.array() +\
                         (1-sparsity_param)*(1-g_rho.array());
@@ -184,10 +186,10 @@ unordered_map<string, MatrixXd> autoencoder::ae_mibt_stoc_grad(int lyr, vector<i
     unordered_map<int, VectorXd> z;
     unordered_map<int, VectorXd> sigma;
     a[1] = data.col(index_data[0]);
-    a[2] = acti_fun("sigmoid", z[2]);
+    a[2] = acti_fun(z[2], "sigmoid");
     VectorXd rho = a[2];  // Get rho first
     z[3] = W2 * a[2] + b2;
-    a[3] = acti_fun("sigmoid", z[3]);
+    a[3] = acti_fun(z[3], "sigmoid");
     sigma[3] = (-(a[1]-a[3]).array() * (a[3].array()*(1-a[3].array()))).matrix();
     VectorXd sparsity_sigma = -sparsity_param/g_rho.array() +\
                           (1-sparsity_param)*(1-g_rho.array());
@@ -218,7 +220,7 @@ unordered_map<string, MatrixXd> autoencoder::ae_mibt_stoc_grad(int lyr, vector<i
     for (int i = 0; i < mini_batch_size; i++) {
       a[1] = data.col(i);
       z[2] = W1 * a[1] + b1;
-      a[2] = acti_fun("sigmoid", z[2]);
+      a[2] = acti_fun(z[2], "sigmoid");
       rho += a[2];
     }
     rho = (rho.array() / mini_batch_size).matrix();
@@ -227,9 +229,9 @@ unordered_map<string, MatrixXd> autoencoder::ae_mibt_stoc_grad(int lyr, vector<i
     for (int i = 0; i < mini_batch_size; i++) {
       a[1] = data.col(i);
       z[2] = W1 * a[1] + b1;
-      a[2] = acti_fun("sigmoid", z[2]);
+      a[2] = acti_fun(z[2], "sigmoid");
       z[3] = W2 * a[2] + b2;
-      a[3] = acti_fun("sigmoid", z[3]);
+      a[3] = acti_fun(z[3], "sigmoid");
       sigma[3] = (-(a[1]-a[3]).array() * (a[3].array()*(1-a[3].array()))).matrix();
       VectorXd sparsity_sigma = -sparsity_param/g_rho.array() +\
                             (1-sparsity_param)*(1-g_rho.array());
@@ -257,4 +259,4 @@ unordered_map<string, MatrixXd> autoencoder::ae_mibt_stoc_grad(int lyr, vector<i
   return WgtBiasGrad;
 }
 
-
+} // namespace paracel

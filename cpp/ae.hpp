@@ -32,7 +32,7 @@ class autoencoder: public paracel::paralg{
   void train(int);
   void train(); // top function
   void dump_result(int);
-  MatrixXd acti_fun(string = "sigmoid", const & MatrixXd);
+  MatrixXd acti_fun(const MatrixXd &, string = "sigmoid") const;
 
   // init
   void ae_init(void);

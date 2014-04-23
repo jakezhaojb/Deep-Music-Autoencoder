@@ -8,7 +8,6 @@
 #include <eigen3/Eigen/Dense>
 #include "ps.hpp"
 #include "utils.hpp"
-#include "sparse_autoencoder.h"
 
 using namespace std;
 using Eigen::MatrixXd;

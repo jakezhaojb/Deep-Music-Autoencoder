@@ -319,7 +319,7 @@ void autoencoder::local_parser(const vector<string> & linelst, const char sep, b
 }
 
 
-MatrixXd vec_to_mat(vector< vector<double> > v){
+MatrixXd vec_to_mat(vector< vector<double> > & v) {
   MatrixXd m(v.size(), v[0].size());
   for (int i = 0; i < v.size(); i++) {
     for (int j = 0; j < v[0].size(); j++) {
@@ -330,7 +330,7 @@ MatrixXd vec_to_mat(vector< vector<double> > v){
 }
 
 
-VectorXd vec_to_mat(vector<double> v){
+VectorXd vec_to_mat(vector<double> & v) {
   VectorXd m(v.size());
   for (int i = 0; i < v.size(); i++) {
     m(i) = v[i];
@@ -339,10 +339,10 @@ VectorXd vec_to_mat(vector<double> v){
 }
 
 
-vector<double> Vec_to_vec(MatrixXd & m){
-  assert( (m.cols()==1 || m.rows() == 1) && "Input of Vec_to_vec should be a Vector or RowVector");
+vector<double> Mat_to_vec(MatrixXd & m){
   vector<double> v;
   for (int i = 0; i < m.size(); i++) {
+    // ordered by column
     v.push_back(m(i));
   }
   return v;

@@ -72,6 +72,6 @@ class autoencoder: public paracel::paralg{
 // convert MatrixXd to vector<double>
 MatrixXd vec_to_mat(vector<vector<double> > &);
 VectorXd vec_to_mat(vector<double> &);
-vector<double> Vec_to_vec(MatrixXd &);
+vector<double> Mat_to_vec(MatrixXd &);
 
 #endif

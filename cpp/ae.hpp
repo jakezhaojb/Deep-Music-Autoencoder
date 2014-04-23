@@ -14,6 +14,9 @@ using namespace std;
 using Eigen::MatrixXd;
 using Eigen::VectorXd;
 
+// global var
+VectorXd g_rho;  // for sparse penalty
+
 namespace paracel{
 
 class autoencoder: public paracel::paralg{
@@ -30,8 +33,10 @@ class autoencoder: public paracel::paralg{
   void train(int);
   void train(); // top function
   void dump_result(int);
+  MatrixXd acti_fun(string = "sigmoid", const & MatrixXd);
 
-  // Included in sparse_autoencoder.h
+  // init
+  void ae_init(void);
   // compute cost function
   double ae_cost(int) const;
   // back-propogation batch gradient compute

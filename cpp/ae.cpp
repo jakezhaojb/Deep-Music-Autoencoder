@@ -28,39 +28,11 @@ autoencoder::autoencoder(paracel::Comm comm, string hosts_dct_str,
     n_lyr = _hidden_size.size();
     hidden_size.assign(_hidden_size.begin(), _hidden_size.end());
     visible_size.assign(_visible_size.begin(), _visible_size.end());
-    for (i = 0; i < n_lyr; i++) {
-      WgtBias.push_back(initialize_parameter(hidden_size[i], visible_size[i]));
-    }
-
+    ae_init();
   }
 
 
 autoencoder::~autoencoder() {}
-
-
-// compute the cost of Neural Networks
-double autoencoder::ae_cost(int lyr) const {
-  return compute_cost(WgtBias[lyr], data, hidden_size[lyr], visible_size[lyr], lamb, sparsity_param, beta);
-}
-
-
-// compute the batch gradient
-unordered_map<string, MatrixXd> autoencoder::ae_batch_grad(int lyr) const{
-  return compute_batch_grad(WgtBias[lyr], data, hidden_size[lyr], visible_size[lyr], lamb, sparsity_param, beta);
-}
-
-
-// compute the stochastic gradient
-unordered_map<string, MatrixXd> autoencoder::ae_stoc_grad(int lyr, int index) const {
-  return compute_stoc_grad(WgtBias[lyr], data, hidden_size[lyr], visible_size[lyr], lamb, sparsity_param, beta, index);
-}
-
-
-// compute the mini-batch stochastic gradient
-unordered_map<string, MatrixXd> autoencoder::ae_mibt_stoc_grad(int lyr, vector<int> index_data) const {
-  return compute_mibt_stoc_grad(WgtBias[lyr], data, hidden_size[lyr], visible_size[lyr], lamb, sparsity_param, beta, index_data);
-}
-
 
 // distributed bgd
 void autoencoder::distribute_bgd(int lyr){

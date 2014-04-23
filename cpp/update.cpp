@@ -1,4 +1,4 @@
-#include </mfs/user/zhaojunbo/Eigen/Dense>
+#include <eigen3/Eigen/Dense>
 #include "proxy.hpp"
 #include "paracel_types.hpp"
 

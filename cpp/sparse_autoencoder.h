@@ -4,40 +4,44 @@
 #include <iostream>
 #include <cmath>
 #include <algorithm>
-#include </mfs/user/zhaojunbo/Eigen/Dense>
+#include <eigen3/Eigen/Dense>
 #include <vector>
 #include <string>
 #include <cassert>
-#include <map>
+#include <unordered_map>
+
+using namespace std;
+using Eigen::MatrixXd;
+using Eigen::VectorXd;
 
 // global
-Eigen::VectorXd g_rho;
+VectorXd g_rho;
 
 
 // parameters initializer
-std::map<std::string, Eigen::MatrixXd> initialize_parameter(int visible_size_lyr, int hidden_size_lyr);
+unordered_map<string, MatrixXd> initialize_parameter(const int visible_size_lyr, const int hidden_size_lyr);
 
 // sigmoid activation
-Eigen::VectorXd sigmoid(Eigen::VectorXd x);
+VectorXd sigmoid(const VectorXd x);
 
 // compute cost function
-double compute_cost(const std::map<std::string, Eigen::MatrixXd> WgtBias, 
-                const Eigen::MatrixXd& data, int hidden_size_lyr, int visible_size_lyr, 
+double compute_cost(const unordered_map<string, MatrixXd> WgtBias, 
+                const MatrixXd& data, int hidden_size_lyr, int visible_size_lyr, 
                 double lamb, double sparsity_param, double beta);
 
 // back-propogation batch gradient compute
-std::map<std::string, Eigen::MatrixXd> compute_batch_grad(const std::map<std::string, Eigen::MatrixXd> WgtBias, 
-                const Eigen::MatrixXd& data, int hidden_size_lyr, int visible_size_lyr, double lamb,
+unordered_map<string, MatrixXd> compute_batch_grad(const unordered_map<string, MatrixXd> WgtBias, 
+                const MatrixXd& data, int hidden_size_lyr, int visible_size_lyr, double lamb,
                 double sparsity_param, double beta);
 
 // back-propogation stochastic gradient compute
-std::map<std::string, Eigen::MatrixXd> compute_stoc_grad(const std::map<std::string, Eigen::MatrixXd> WgtBias, 
-                  const Eigen::MatrixXd& data, int hidden_size_lyr, int visible_size_lyr, 
+unordered_map<string, MatrixXd> compute_stoc_grad(const unordered_map<string, MatrixXd> WgtBias, 
+                  const MatrixXd& data, int hidden_size_lyr, int visible_size_lyr, 
                   double lamb, double sparsity_param, double beta, int index);
 
-std::map<std::string, Eigen::MatrixXd> compute_mibt_stoc_grad(const std::map<std::string, Eigen::MatrixXd> WgtBias, 
-                  const Eigen::MatrixXd& data, int hidden_size_lyr, int visible_size_lyr, 
-                  double lamb, double sparsity_param, double beta, std::vector<int> index_data);
+unordered_map<string, MatrixXd> compute_mibt_stoc_grad(const unordered_map<string, MatrixXd> WgtBias, 
+                  const MatrixXd& data, int hidden_size_lyr, int visible_size_lyr, 
+                  double lamb, double sparsity_param, double beta, vector<int> index_data);
 
 
 #endif

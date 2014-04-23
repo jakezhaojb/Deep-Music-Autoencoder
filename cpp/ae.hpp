@@ -3,25 +3,30 @@
 
 #include <string>
 #include <vector>
+#include <unordered_map>
 #include <cstdlib>
-#include </mfs/user/zhaojunbo/Eigen/Dense>
+#include <eigen3/Eigen/Dense>
 #include "ps.hpp"
 #include "utils.hpp"
 #include "sparse_autoencoder.h"
+
+using namespace std;
+using Eigen::MatrixXd;
+using Eigen::VectorXd;
 
 namespace paracel{
 
 class autoencoder: public paracel::paralg{
 
  public:
-  autoencoder(paracel::Comm, std::string, std::string, std::string, std::vector<int>, std::vector<int>, std::string = "sgd", int = 1, double = 0.01, bool = false, int = 0, bool = false, double = 0.001, double = 0.0001, double = 3., int = 1); // TO BE COMPLETED
+  autoencoder(paracel::Comm, string, string, string, vector<int>, vector<int>, string = "sgd", int = 1, double = 0.01, bool = false, int = 0, bool = false, double = 0.001, double = 0.0001, double = 3., int = 1); // TO BE COMPLETED
   virtual ~autoencoder();
 
   void downpour_sgd(int); // downpour stochastic gradient descent
   void distribute_bgd(int);          // conventional batch-gradient descent
   void downpour_sgd_mibt(int); // downpour stochastic gradient descent and mini-batch involved
   
-  void local_parser(const std::vector<std::string> &, const char = ',', bool = false);
+  void local_parser(const vector<string> &, const char = ',', bool = false);
   void train(int);
   void train(); // top function
   void dump_result(int);
@@ -30,39 +35,39 @@ class autoencoder: public paracel::paralg{
   // compute cost function
   double ae_cost(int) const;
   // back-propogation batch gradient compute
-  std::map<std::string, Eigen::MatrixXd> ae_batch_grad(int) const;
+  unordered_map<string, MatrixXd> ae_batch_grad(int) const;
   // back-propogation stochastic gradient compute
-  std::map<std::string, Eigen::MatrixXd> ae_stoc_grad(int, int) const;
+  unordered_map<string, MatrixXd> ae_stoc_grad(int, int) const;
   // BP with Mini-batch
-  std::map<std::string, Eigen::MatrixXd> ae_mibt_stoc_grad(int, std::vector<int>) const;
+  unordered_map<string, MatrixXd> ae_mibt_stoc_grad(int, vector<int>) const;
 
  private:
-  std::string input;
+  string input;
   int worker_id;
   int rounds;
   int n_lyr;
   int mibt_size;
-  std::string learning_method;
+  string learning_method;
   bool debug = false;
-  std::vector<double> loss_error;
-  std::vector<std::map<std::string, Eigen::MatrixXd> > WgtBias;
-  Eigen::MatrixXd data;
-  std::vector< std::vector<double> > samples;
-  std::vector<int> labels; // if necessary
+  vector<double> loss_error;
+  vector<unordered_map<string, MatrixXd> > WgtBias;
+  MatrixXd data;
+  vector< vector<double> > samples;
+  vector<int> labels; // if necessary
   double lamb;            // weight decay
   double sparsity_param;    // sparse KL comparison
   double beta;              // sparse penalty
   double alpha;             // learning step size
-  std::vector<int> hidden_size;
-  std::vector<int> visible_size;
+  vector<int> hidden_size;
+  vector<int> visible_size;
 
 }; // class
 
 } // namespace paracel
 
-// convert Eigen::MatrixXd to std::vector<double>
-Eigen::MatrixXd vec_to_mat(std::vector<std::vector<double> > &);
-Eigen::VectorXd vec_to_mat(std::vector<double> &);
-std::vector<double> Vec_to_vec(Eigen::MatrixXd &);
+// convert MatrixXd to vector<double>
+MatrixXd vec_to_mat(vector<vector<double> > &);
+VectorXd vec_to_mat(vector<double> &);
+vector<double> Vec_to_vec(MatrixXd &);
 
 #endif

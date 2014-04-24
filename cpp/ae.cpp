@@ -8,13 +8,15 @@ namespace paracel{
 
 // construction function
 autoencoder::autoencoder(paracel::Comm comm, string hosts_dct_str,
-          string _input, string output, vector<int> _hidden_size,
-          vector<int> _visible_size, string method, int _rounds, 
+          vector<string> _input, string output, vector<int> _hidden_size,
+          int _visible_size, string method, int _rounds, 
           double _alpha, bool _debug, int limit_s, bool ssp_switch, 
           double _lamb, double _sparsity_param, double _beta, int _mibt_size) :
   paracel::paralg(hosts_dct_str, comm, output, _rounds, limit_s, ssp_switch),
   worker_id(comm.get_rank()),
-  input(_input),
+  input(_input),  // AVAILBLE???
+  hidden_size(_hidden_size);  // AVAILBLE???
+  visible_size(_visible_size);
   learning_method(method),
   rounds(_rounds),
   alpha(_alpha),
@@ -23,10 +25,10 @@ autoencoder::autoencoder(paracel::Comm comm, string hosts_dct_str,
   sparsity_param(_sparsity_param),
   beta(_beta),
   mibt_size(_mibt_size) {
-    assert(_hidden_size.size() == _visible_size.size());
-    n_lyr = _hidden_size.size();
-    hidden_size.assign(_hidden_size.begin(), _hidden_size.end());
-    visible_size.assign(_visible_size.begin(), _visible_size.end());
+    //hidden_size.assign(_hidden_size.begin(), _hidden_size.end());
+    n_lyr = hidden_size.size();  // number of hidden layers
+    layer_size.assign(hidden_size.begin(), hidden_size.end());
+    layer_size.insert(layer_size.begin(), visible_size);
     ae_init();
   }
 
@@ -40,10 +42,10 @@ void autoencoder::ae_init(){
   double r = sqrt(6);
   unordered_map<string, MatrixXd> InitWgtBias;
   for (int i = 0; i < n_lyr; i++) {
-    MatrixXd W1 = (MatrixXd::Random(hidden_size[i], visible_size[i]).array() * 2 * r - r).matrix();
-    MatrixXd W2 = (MatrixXd::Random(visible_size[i], hidden_size[i]).array() * 2 * r - r).matrix();
-    VectorXd b1 = VectorXd::Random(hidden_size[i]);
-    VectorXd b2 = VectorXd::Random(visible_size[i]);
+    MatrixXd W1 = (MatrixXd::Random(layer_size[i+1], layer_size[i]).array() * 2 * r - r).matrix();
+    MatrixXd W2 = (MatrixXd::Random(layer_size[i], layer_size[i+1]).array() * 2 * r - r).matrix();
+    VectorXd b1 = VectorXd::Random(layer_size[i+1]);
+    VectorXd b2 = VectorXd::Random(layer_size[i]);
     InitWgtBias["W1"] = W1;
     InitWgtBias["W2"] = W2;
     InitWgtBias["b1"] = b1;
@@ -503,7 +505,7 @@ void autoencoder::downpour_sgd_mibt(int lyr){
 
 void autoencoder::train(int lyr){
   int i;
-  auto lines = paracel_load(input);
+  auto lines = paracel_load(input[lyr]);
   local_parser(lines); 
   sync();
   if (learning_method == "dbgd") {
@@ -529,6 +531,8 @@ void autoencoder::train(int lyr){
     return;
   }
   sync();
+  data = (WgtBias[lyr].at("W1") * data).colwise() + WgtBias[lyr].at("b1");
+  // WRITE DATA TO A INPUT FILE
 }
 
 
@@ -550,7 +554,7 @@ void autoencoder::local_parser(const vector<string> & linelst, const char sep, b
       vector<double> tmp;
       auto linev = paracel::str_split(line, sep);
       // WHY???
-      tmp.push_back(1.);  
+      //tmp.push_back(1.);  
       for (size_t i = 0; i < linev.size() - 1; i++) {
         tmp.push_back(std::stod(linev[i]));
       }
@@ -562,7 +566,7 @@ void autoencoder::local_parser(const vector<string> & linelst, const char sep, b
       vector<double> tmp;
       auto linev = paracel::str_split(line, sep);
       // WHY??
-      tmp.push_back(1.);
+      //tmp.push_back(1.);
       for (size_t i = 0; i < linev.size(); i++) {
         tmp.push_back(std::stod(linev[i]));
       }

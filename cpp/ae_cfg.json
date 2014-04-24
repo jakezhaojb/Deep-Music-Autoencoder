@@ -9,6 +9,6 @@
   "lamb" : 0.001,
   "sparsity_param" : 0.01,
   "n_lyr" : 3,
-  "hidden_size" : [25,16,9],
+  "hidden_size" : [25],
   "visible_size" : 64
 }

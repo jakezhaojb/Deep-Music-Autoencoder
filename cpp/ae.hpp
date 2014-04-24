@@ -21,7 +21,7 @@ namespace paracel{
 class autoencoder: public paracel::paralg{
 
  public:
-  autoencoder(paracel::Comm, string, string, string, vector<int>, vector<int>, string = "sgd", int = 1, double = 0.01, bool = false, int = 0, bool = false, double = 0.001, double = 0.0001, double = 3., int = 1); // TO BE COMPLETED
+  autoencoder(paracel::Comm, string, vector<string>, string, vector<int>, int, string = "sgd", int = 1, double = 0.01, bool = false, int = 0, bool = false, double = 0.001, double = 0.0001, double = 3., int = 1); // TO BE COMPLETED
   virtual ~autoencoder();
 
   void downpour_sgd(int); // downpour stochastic gradient descent
@@ -59,10 +59,10 @@ class autoencoder: public paracel::paralg{
   vector<double> Mat_to_vec(MatrixXd &);  // column ordered
 
  private:
-  string input;
+  vector<string> input;  // where you store data over layers
   int worker_id;
   int rounds;
-  int n_lyr;
+  int n_lyr;  // number of hidden layers
   int mibt_size;
   string learning_method;
   bool debug = false;
@@ -76,7 +76,8 @@ class autoencoder: public paracel::paralg{
   double beta;              // sparse penalty
   double alpha;             // learning step size
   vector<int> hidden_size;
-  vector<int> visible_size;
+  int visible_size;
+  vector<int> layer_size;  // combine hidden_size and layer_size together
 
 }; // class
 

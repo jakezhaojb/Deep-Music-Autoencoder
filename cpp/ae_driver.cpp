@@ -8,7 +8,7 @@
 #include <boost/property_tree/json_parser.hpp>
 
 #include "ae.hpp"
-#include <utils.hpp>
+#include "utils.hpp"
 
 using namespace boost::property_tree;
 
@@ -16,7 +16,7 @@ DEFINE_string(server_info, "host1:7777PARACELhost2:8888", "hosts name string of 
 
 DEFINE_string(cfg_file, "", "config json file with absolute path.\n");
 
-int main(int argc, const char *argv[])
+int main(int argc, char *argv[])
 {
   paracel::main_env comm_main_env(argc, argv);
   paracel::Comm comm(MPI_COMM_WORLD);
@@ -38,12 +38,16 @@ int main(int argc, const char *argv[])
   int n_lyr = pt.get<int>("n_lyr");
     
   // AVAILABLE??
-  vector<int> hidden_size = pt.get<vector<int> >("hidden_size");
-  vector<int> visible_size = pt.get<vector<int> >("visible_size");
+  //vector<int> hidden_size = pt.get<vector<int> >("hidden_size");
+  //vector<int> visible_size = pt.get<vector<int> >("visible_size");
+  vector<int> hidden_size{64};
+  vector<int> visible_size{25};
   
-  paracel::autoencoder ae_solver(comm, FLAGS_server_info, input, output, hidden_size, visible_size, "dsgd", rounds, alpha, false, limit_s,
-            true, lamb, sparsity_param, beta, mibt_size);
-  ae_solver.train();
+  {
+    paracel::autoencoder ae_solver(comm, FLAGS_server_info, input, output, hidden_size, visible_size, "dsgd", rounds, alpha, false, limit_s,
+              true, lamb, sparsity_param, beta, mibt_size);
+    ae_solver.train();
+  }
 
   return 0;
 }

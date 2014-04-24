@@ -29,9 +29,10 @@ class autoencoder: public paracel::paralg{
   void downpour_sgd_mibt(int); // downpour stochastic gradient descent and mini-batch involved
   
   void local_parser(const vector<string> &, const char = ',', bool = false);
+  void local_dump_Mat(const MatrixXd &, const string filename, const char = ',');
   void train(int);
   void train(); // top function
-  void dump_result(int);
+  void dump_result(int) const;
   MatrixXd acti_fun(const MatrixXd &, string = "sigmoid") const;
 
   // init

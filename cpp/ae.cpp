@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <iostream>
+#include <fstream>
 #include "ae.hpp"
 #include "ps.hpp"
 #include "utils.hpp"
@@ -508,6 +509,7 @@ void autoencoder::train(int lyr){
   auto lines = paracel_load(input[lyr]);
   local_parser(lines); 
   sync();
+  assert(data.rows() == layer_size[lyr]);  // QA
   if (learning_method == "dbgd") {
     std::cout << "chose distributed batch gradient descent" << std::endl;
     set_total_iters(rounds); // default value
@@ -532,7 +534,7 @@ void autoencoder::train(int lyr){
   }
   sync();
   data = (WgtBias[lyr].at("W1") * data).colwise() + WgtBias[lyr].at("b1");
-  // WRITE DATA TO A INPUT FILE
+  local_dump_Mat(data, input[lyr+1]);
 }
 
 
@@ -573,8 +575,21 @@ void autoencoder::local_parser(const vector<string> & linelst, const char sep, b
       samples.push_back(tmp);
     }
   }
+  // AVAILBLE WITH SPMD???
   data = vec_to_mat(samples).transpose();  // transpose is needed, since the data is sliced by-row 
                                  // and samples are stored by-column in variable "data".
+}
+
+void autoencoder::local_dump_Mat(const MatrixXd & m, const string filename, const char sep){
+  std::ofstream os;
+  os.open(filename);
+  for (int i = 0; i < m.rows(); i++) {
+    for (int j = 0; j < m.cols(); j++) {
+      os << std::to_string(data(i, j)) << sep;
+    }
+    os << "\n";
+  }
+  os.close();
 }
 
 
@@ -626,7 +641,7 @@ void autoencoder::_paracel_bupdate(string key, MatrixXd & m){
   paracel_bupdate(key, Mat_to_vec(m));
 }
 
-void autoencoder::dump_result(int lyr){
+void autoencoder::dump_result(int lyr) const{
   int i;
   MatrixXd tmp;
   if (get_worker_id() == 0) {

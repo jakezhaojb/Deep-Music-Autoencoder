@@ -26,7 +26,8 @@ int main(int argc, char *argv[])
   
   ptree pt;
   json_parser::read_json(FLAGS_cfg_file, pt);
-  std::string input = pt.get<std::string>("input");
+  // WRONG! json can't parse via vector<string>
+  std::string input = pt.get<std::vector<std::string> >("input");
   std::string output = pt.get<std::string>("output");
   double alpha = pt.get<double>("alpha");
   double beta = pt.get<double>("beta");
@@ -41,7 +42,7 @@ int main(int argc, char *argv[])
   //vector<int> hidden_size = pt.get<vector<int> >("hidden_size");
   //vector<int> visible_size = pt.get<vector<int> >("visible_size");
   vector<int> hidden_size{64};
-  vector<int> visible_size{25};
+  int visible_size = 25;
   
   {
     paracel::autoencoder ae_solver(comm, FLAGS_server_info, input, output, hidden_size, visible_size, "dsgd", rounds, alpha, false, limit_s,

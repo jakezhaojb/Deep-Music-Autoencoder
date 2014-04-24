@@ -15,9 +15,9 @@ autoencoder::autoencoder(paracel::Comm comm, string hosts_dct_str,
           double _lamb, double _sparsity_param, double _beta, int _mibt_size) :
   paracel::paralg(hosts_dct_str, comm, output, _rounds, limit_s, ssp_switch),
   worker_id(comm.get_rank()),
-  input(_input),  // AVAILBLE???
-  hidden_size(_hidden_size);  // AVAILBLE???
-  visible_size(_visible_size);
+  input(_input),
+  hidden_size(_hidden_size),
+  visible_size(_visible_size),
   learning_method(method),
   rounds(_rounds),
   alpha(_alpha),
@@ -533,8 +533,10 @@ void autoencoder::train(int lyr){
     return;
   }
   sync();
-  data = (WgtBias[lyr].at("W1") * data).colwise() + WgtBias[lyr].at("b1");
-  local_dump_Mat(data, input[lyr+1]);
+  //data = (WgtBias[lyr].at("W1") * data).colwise() + WgtBias[lyr].at("b1");
+  //// IS THIS OK??
+  //local_dump_Mat(data, input[lyr+1]);
+  //sync(); // NEEDED?
 }
 
 
@@ -582,7 +584,7 @@ void autoencoder::local_parser(const vector<string> & linelst, const char sep, b
 
 void autoencoder::local_dump_Mat(const MatrixXd & m, const string filename, const char sep){
   std::ofstream os;
-  os.open(filename);
+  os.open(filename, std::ofstream::app);
   for (int i = 0; i < m.rows(); i++) {
     for (int j = 0; j < m.cols(); j++) {
       os << std::to_string(data(i, j)) << sep;
@@ -641,7 +643,7 @@ void autoencoder::_paracel_bupdate(string key, MatrixXd & m){
   paracel_bupdate(key, Mat_to_vec(m));
 }
 
-void autoencoder::dump_result(int lyr) const{
+void autoencoder::dump_result(int lyr) {
   int i;
   MatrixXd tmp;
   if (get_worker_id() == 0) {

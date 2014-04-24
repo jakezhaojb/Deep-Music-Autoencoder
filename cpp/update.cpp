@@ -2,6 +2,8 @@
 #include "proxy.hpp"
 #include "paracel_types.hpp"
 
+using namespace std;
+
 extern "C"{
   extern paracel::update_result ae_update;
 }

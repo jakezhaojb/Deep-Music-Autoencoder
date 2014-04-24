@@ -45,6 +45,19 @@ class autoencoder: public paracel::paralg{
   // BP with Mini-batch
   unordered_map<string, MatrixXd> ae_mibt_stoc_grad(int, vector<int>) const;
 
+  // compatinility of paracel and MatrixXd
+  void _paracel_write(string key, MatrixXd & m);
+  MatrixXd _paracel_read(string key, int r, int c);
+  VectorXd _paracel_read(string key);
+  void _paracel_bupdate(string key, MatrixXd & m);
+
+  // IT SHOULD BE CLASS-INVARIANT!!!
+  // conversion between Eigen::MatrixXd and std::vector
+  MatrixXd vec_to_mat(vector<vector<double> > &); // row ordered
+  VectorXd vec_to_mat(vector<double> &);  // column ordered
+  MatrixXd vec_to_mat(vector<double> &, int, int);  // column ordered
+  vector<double> Mat_to_vec(MatrixXd &);  // column ordered
+
  private:
   string input;
   int worker_id;
@@ -67,17 +80,7 @@ class autoencoder: public paracel::paralg{
 
 }; // class
 
-void _paracel_write(string key, MatrixXd & m);
-MatrixXd _paracel_read(string key, int r, int c);
-VectorXd _paracel_read(string key);
-void _paracel_bupdate(string key, MatrixXd & m);
-
 } // namespace paracel
 
-// conversion between Eigen::MatrixXd and std::vector
-//MatrixXd vec_to_mat(vector<vector<double> > &);
-VectorXd vec_to_mat(vector<double> &);
-MatrixXd vec_to_mat(vector<double> &, int, int);
-vector<double> Mat_to_vec(MatrixXd &);
 
 #endif

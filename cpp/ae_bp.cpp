@@ -217,7 +217,7 @@ unordered_map<string, MatrixXd> autoencoder::ae_mibt_stoc_grad(int lyr, vector<i
 
     // Get rho first
     VectorXd rho(b1.size());
-    for (int i = 0; i < mini_batch_size; i++) {
+    for (int i = 0; i < (int)mini_batch_size; i++) {
       a[1] = data.col(i);
       z[2] = W1 * a[1] + b1;
       a[2] = acti_fun(z[2], "sigmoid");
@@ -226,7 +226,7 @@ unordered_map<string, MatrixXd> autoencoder::ae_mibt_stoc_grad(int lyr, vector<i
     rho = (rho.array() / mini_batch_size).matrix();
 
     // BP
-    for (int i = 0; i < mini_batch_size; i++) {
+    for (int i = 0; i < (int)mini_batch_size; i++) {
       a[1] = data.col(i);
       z[2] = W1 * a[1] + b1;
       a[2] = acti_fun(z[2], "sigmoid");

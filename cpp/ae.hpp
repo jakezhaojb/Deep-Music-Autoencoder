@@ -67,11 +67,17 @@ class autoencoder: public paracel::paralg{
 
 }; // class
 
+void _paracel_write(string key, MatrixXd & m);
+MatrixXd _paracel_read(string key, int r, int c);
+VectorXd _paracel_read(string key);
+void _paracel_bupdate(string key, MatrixXd & m);
+
 } // namespace paracel
 
-// convert MatrixXd to vector<double>
-MatrixXd vec_to_mat(vector<vector<double> > &);
+// conversion between Eigen::MatrixXd and std::vector
+//MatrixXd vec_to_mat(vector<vector<double> > &);
 VectorXd vec_to_mat(vector<double> &);
+MatrixXd vec_to_mat(vector<double> &, int, int);
 vector<double> Mat_to_vec(MatrixXd &);
 
 #endif

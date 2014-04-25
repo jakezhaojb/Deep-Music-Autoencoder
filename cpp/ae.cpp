@@ -28,6 +28,7 @@ autoencoder::autoencoder(paracel::Comm comm, string hosts_dct_str,
   mibt_size(_mibt_size) {
     //hidden_size.assign(_hidden_size.begin(), _hidden_size.end());
     n_lyr = hidden_size.size();  // number of hidden layers
+    assert(n_lyr == input.size());
     layer_size.assign(hidden_size.begin(), hidden_size.end());
     layer_size.insert(layer_size.begin(), visible_size);
     ae_init();
@@ -533,10 +534,16 @@ void autoencoder::train(int lyr){
     return;
   }
   sync();
+  // COMPILER SHOWS COLWISE() IS APPLIED TO A VECTOR NOT A MATRIX!??
   //data = (WgtBias[lyr].at("W1") * data).colwise() + WgtBias[lyr].at("b1");
-  //// IS THIS OK??
-  //local_dump_Mat(data, input[lyr+1]);
-  //sync(); // NEEDED?
+  // INSTEAD...
+  data = WgtBias[lyr].at("W1") * data;
+  for (int i = 0; i < data.cols(); i++) {
+    data.col(i) += WgtBias[lyr].at("b1");
+  }
+  // IS THIS OK??
+  local_dump_Mat(data, input[lyr+1]);
+  sync(); // NEEDED?
 }
 
 

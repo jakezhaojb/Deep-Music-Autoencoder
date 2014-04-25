@@ -1,5 +1,7 @@
 {
-  "input" : ,
+  "input" : ["/mfs/user/zhaojunbo/paracel/build/ae/data_0.csv",
+             "/mfs/user/zhaojunbo/paracel/build/ae/data_1.csv",
+             "/mfs/user/zhaojunbo/paracel/build/ae/data_2.csv"],
   "output" : ,
   "alpha" : 0.01,
   "beta" : 3,
@@ -8,7 +10,6 @@
   "mibt_size" : 20,
   "lamb" : 0.001,
   "sparsity_param" : 0.01,
-  "n_lyr" : 3,
-  "hidden_size" : [25],
-  "visible_size" : 64
+  "visible_size" : 64,
+  "hidden_size" : [25,16,9]
 }

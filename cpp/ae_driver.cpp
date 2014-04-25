@@ -1,4 +1,5 @@
 #include <string>
+#include <vector>
 #include <iostream>
 
 #include <mpi.h>
@@ -6,6 +7,7 @@
 
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
+#include <boost/foreach.hpp>
 
 #include "ae.hpp"
 #include "utils.hpp"
@@ -26,8 +28,6 @@ int main(int argc, char *argv[])
   
   ptree pt;
   json_parser::read_json(FLAGS_cfg_file, pt);
-  // WRONG! json can't parse via vector<string>
-  std::string input = pt.get<std::vector<std::string> >("input");
   std::string output = pt.get<std::string>("output");
   double alpha = pt.get<double>("alpha");
   double beta = pt.get<double>("beta");
@@ -36,13 +36,10 @@ int main(int argc, char *argv[])
   int rounds = pt.get<int>("rounds");
   int limit_s = pt.get<int>("limit_s");
   int mibt_size = pt.get<int>("mibt_size");
-  int n_lyr = pt.get<int>("n_lyr");
-    
-  // AVAILABLE??
-  //vector<int> hidden_size = pt.get<vector<int> >("hidden_size");
-  //vector<int> visible_size = pt.get<vector<int> >("visible_size");
-  vector<int> hidden_size{64};
-  int visible_size = 25;
+  int visible_size = pt.get<int>("visible_size");
+  // WRONG, STD::VECTOR CAN'T BE READ BY BOOST JSON.
+  std::vector<std::string> input; //= pt.get<std::vector<std::string> >("input");
+  std::vector<int> hidden_size; //= pt.get<std::vector<int> >("hidden_size");
   
   {
     paracel::autoencoder ae_solver(comm, FLAGS_server_info, input, output, hidden_size, visible_size, "dsgd", rounds, alpha, false, limit_s,

@@ -18,6 +18,22 @@ DEFINE_string(server_info, "host1:7777PARACELhost2:8888", "hosts name string of 
 
 DEFINE_string(cfg_file, "", "config json file with absolute path.\n");
 
+std::vector<int> split(std::string & str, char sep = ','){
+  std::vector<int> res;
+  size_t en = 0, st = 0;
+  while(1){
+    en = str.find(sep, st);
+    std::string s = str.substr(st, en - st);
+    res.push_back(stod(s));
+    if (en == str.npos) {
+      break;
+    }
+    st = en + 1;
+  }
+  return res;
+}
+
+
 int main(int argc, char *argv[])
 {
   paracel::main_env comm_main_env(argc, argv);
@@ -29,6 +45,7 @@ int main(int argc, char *argv[])
   ptree pt;
   json_parser::read_json(FLAGS_cfg_file, pt);
   std::string output = pt.get<std::string>("output");
+  std::string input = pt.get<std::string>("input");
   double alpha = pt.get<double>("alpha");
   double beta = pt.get<double>("beta");
   double lamb = pt.get<double>("lamb");
@@ -37,10 +54,9 @@ int main(int argc, char *argv[])
   int limit_s = pt.get<int>("limit_s");
   int mibt_size = pt.get<int>("mibt_size");
   int visible_size = pt.get<int>("visible_size");
-  // WRONG, STD::VECTOR CAN'T BE READ BY BOOST JSON.
-  std::vector<std::string> input; //= pt.get<std::vector<std::string> >("input");
-  std::vector<int> hidden_size; //= pt.get<std::vector<int> >("hidden_size");
-  
+  std::string _hidden_size = pt.get<std::string>("hidden_size");
+  vector<int> hidden_size = split(_hidden_size);
+
   {
     paracel::autoencoder ae_solver(comm, FLAGS_server_info, input, output, hidden_size, visible_size, "dsgd", rounds, alpha, false, limit_s,
               true, lamb, sparsity_param, beta, mibt_size);

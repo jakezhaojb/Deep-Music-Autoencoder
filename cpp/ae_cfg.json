@@ -1,8 +1,6 @@
 {
-  "input" : ["/mfs/user/zhaojunbo/paracel/build/ae/data_0.csv",
-             "/mfs/user/zhaojunbo/paracel/build/ae/data_1.csv",
-             "/mfs/user/zhaojunbo/paracel/build/ae/data_2.csv"],
-  "output" : ,
+  "input" : "/mfs/user/zhaojunbo/paracel/build/ae/data/",
+  "output" :  "/mfs/user/zhaojunbo/paracel/build/ae/tmp/",
   "alpha" : 0.01,
   "beta" : 3,
   "rounds" : 20,
@@ -11,5 +9,5 @@
   "lamb" : 0.001,
   "sparsity_param" : 0.01,
   "visible_size" : 64,
-  "hidden_size" : [25,16,9]
+  "hidden_size" : "25,16,9"
 }

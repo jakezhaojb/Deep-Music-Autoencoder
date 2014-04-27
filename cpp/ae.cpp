@@ -9,7 +9,7 @@ namespace paracel{
 
 // construction function
 autoencoder::autoencoder(paracel::Comm comm, string hosts_dct_str,
-          vector<string> _input, string output, vector<int> _hidden_size,
+          string _input, string output, vector<int> _hidden_size,
           int _visible_size, string method, int _rounds, 
           double _alpha, bool _debug, int limit_s, bool ssp_switch, 
           double _lamb, double _sparsity_param, double _beta, int _mibt_size) :
@@ -28,7 +28,6 @@ autoencoder::autoencoder(paracel::Comm comm, string hosts_dct_str,
   mibt_size(_mibt_size) {
     //hidden_size.assign(_hidden_size.begin(), _hidden_size.end());
     n_lyr = hidden_size.size();  // number of hidden layers
-    assert(n_lyr == input.size());
     layer_size.assign(hidden_size.begin(), hidden_size.end());
     layer_size.insert(layer_size.begin(), visible_size);
     ae_init();
@@ -507,7 +506,8 @@ void autoencoder::downpour_sgd_mibt(int lyr){
 
 void autoencoder::train(int lyr){
   int i;
-  auto lines = paracel_load(input[lyr]);
+  string filename = todir(input) + "data_" + std::to_string(lyr) + ".csv";
+  auto lines = paracel_load(filename);
   local_parser(lines); 
   sync();
   assert(data.rows() == layer_size[lyr]);  // QA
@@ -534,15 +534,15 @@ void autoencoder::train(int lyr){
     return;
   }
   sync();
-  // COMPILER SHOWS COLWISE() IS APPLIED TO A VECTOR NOT A MATRIX!??
+  // NEEDED TO MODIFY!
   //data = (WgtBias[lyr].at("W1") * data).colwise() + WgtBias[lyr].at("b1");
-  // INSTEAD...
+  // TEMPORARILY INSTEAD...
   data = WgtBias[lyr].at("W1") * data;
   for (int i = 0; i < data.cols(); i++) {
     data.col(i) += WgtBias[lyr].at("b1");
   }
   // IS THIS OK??
-  local_dump_Mat(data, input[lyr+1]);
+  local_dump_Mat(data, todir(input) + "data_" + std::to_string(lyr+1) + ".csv");
   sync(); // NEEDED?
 }
 

@@ -650,30 +650,49 @@ void autoencoder::_paracel_bupdate(string key, MatrixXd & m){
   paracel_bupdate(key, Mat_to_vec(m));
 }
 
+
+void autoencoder::dump_mat(const MatrixXd & m, const string filename){
+  std::fstream fout;
+  fout.open(filename, std::ios::out);
+  for (int i = 0; i < m.rows(); i++) {
+    for (int j = 0; size_t j < m.cols(); size_t j++) {
+      os << std::to_string(m(i, j)) << " ";
+    }
+    os << "\n";
+  }
+  os.close();
+}
+
+
 void autoencoder::dump_result(int lyr) {
-  int i;
   MatrixXd tmp;
   if (get_worker_id() == 0) {
-    for (i = 0; i < WgtBias[lyr].at("W1").rows(); i++) {
+    dump_mat(WgtBias[lyr].at("W1"), ("ae_layer_" + std::to_string(lyr) + "_W1_"));
+    dump_mat(WgtBias[lyr].at("W2"), ("ae_layer_" + std::to_string(lyr) + "_W2_"));
+    dump_mat(WgtBias[lyr].at("b1"), ("ae_layer_" + std::to_string(lyr) + "_b1_"));
+    dump_mat(WgtBias[lyr].at("b2"), ("ae_layer_" + std::to_string(lyr) + "_b2_"));
+    /*
+    for (int i = 0; i < WgtBias[lyr].at("W1").rows(); i++) {
       tmp = WgtBias[lyr].at("W1").row(i);
       paracel_dump_vector(Mat_to_vec(tmp), 
             ("ae_layer_" + std::to_string(lyr) + "_W1_"), ",", false);
     }
-    for (i = 0; i < WgtBias[lyr].at("W2").rows(); i++) {
+    for (int i = 0; i < WgtBias[lyr].at("W2").rows(); i++) {
       tmp = WgtBias[lyr].at("W2").row(i);
       paracel_dump_vector(Mat_to_vec(tmp), 
             ("ae_layer_" + std::to_string(lyr) + "_W2_"), ",", false);
     }
-    for (i = 0; i < WgtBias[lyr].at("b1").rows(); i++) {
+    for (int i = 0; i < WgtBias[lyr].at("b1").rows(); i++) {
       tmp = WgtBias[lyr].at("b1").row(i);
       paracel_dump_vector(Mat_to_vec(tmp), 
             ("ae_layer_" + std::to_string(lyr) + "_b1_"), ",", false);
     }
-    for (i = 0; i < WgtBias[lyr].at("b2").rows(); i++) {
+    for (int i = 0; i < WgtBias[lyr].at("b2").rows(); i++) {
       tmp = WgtBias[lyr].at("b2").row(i);
       paracel_dump_vector(Mat_to_vec(tmp), 
             ("ae_layer_" + std::to_string(lyr) + "_b2_"), ",", false);
     }
+    */
   }
 }
 

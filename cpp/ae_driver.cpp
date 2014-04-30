@@ -8,6 +8,7 @@
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/foreach.hpp>
+//#include <boost/filesystem>
 
 #include "ae.hpp"
 #include "utils.hpp"
@@ -46,6 +47,7 @@ int main(int argc, char *argv[])
   json_parser::read_json(FLAGS_cfg_file, pt);
   std::string output = pt.get<std::string>("output");
   std::string input = pt.get<std::string>("input");
+  std::string learning_method = pt.get<std::string>("learning_method");
   double alpha = pt.get<double>("alpha");
   double beta = pt.get<double>("beta");
   double lamb = pt.get<double>("lamb");
@@ -54,12 +56,20 @@ int main(int argc, char *argv[])
   int limit_s = pt.get<int>("limit_s");
   int mibt_size = pt.get<int>("mibt_size");
   int visible_size = pt.get<int>("visible_size");
+  int read_batch = pt.get<int>("read_batch");
+  int update_batch = pt.get<int>("update_batch");
   std::string _hidden_size = pt.get<std::string>("hidden_size");
+
+  // Processing the parsing
   vector<int> hidden_size = split(_hidden_size);
+//  if(!boost::filesystem::exists(input))
+//    boost::filesystem::create_directories(input);
+//  if(!boost::filesystem::exists(output))
+//    boost::filesystem::create_directories(output);
 
   {
-    paracel::autoencoder ae_solver(comm, FLAGS_server_info, input, output, hidden_size, visible_size, "dsgd", rounds, alpha, false, limit_s,
-              true, lamb, sparsity_param, beta, mibt_size);
+    paracel::autoencoder ae_solver(comm, FLAGS_server_info, input, output, hidden_size, visible_size, learning_method, rounds, alpha, false, limit_s,
+              true, lamb, sparsity_param, beta, mibt_size, read_batch, update_batch);
     ae_solver.train();
   }
 

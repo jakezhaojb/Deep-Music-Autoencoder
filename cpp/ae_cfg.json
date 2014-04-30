@@ -1,13 +1,16 @@
 {
-  "input" : "/mfs/user/zhaojunbo/paracel/build/ae/data/",
-  "output" :  "/mfs/user/zhaojunbo/paracel/build/ae/tmp/",
+  "input" : "/mfs/user/zhaojunbo/paracel/build/ae_dat/data/",
+  "output" :  "/mfs/user/zhaojunbo/paracel/build/ae_dat/tmp/",
+  "learning_method" : "dsgd",
   "alpha" : 0.01,
-  "beta" : 3,
+  "beta" : 0.3,
   "rounds" : 20,
   "limit_s" : 2,
-  "mibt_size" : 20,
-  "lamb" : 0.001,
-  "sparsity_param" : 0.01,
-  "visible_size" : 64,
-  "hidden_size" : "25,16,9"
+  "mibt_size" : 40,
+  "lamb" : 0.0001,
+  "sparsity_param" : 0.1,
+  "visible_size" : 784,
+  "hidden_size" : "256,64,25",
+  "read_batch" : 4,
+  "update_batch" : 4
 }

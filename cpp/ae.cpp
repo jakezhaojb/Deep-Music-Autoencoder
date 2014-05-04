@@ -257,7 +257,7 @@ unordered_map<string, MatrixXd> autoencoder::ae_mibt_stoc_grad(int lyr, vector<i
     unordered_map<int, VectorXd> sigma;
 
     // Get rho first
-    VectorXd rho(b1.size());
+    VectorXd rho = VectorXd::Zero(b1.size());
     for (auto i : index_data) {
       a[1] = data.col(i);
       z[2] = W1 * a[1] + b1;
@@ -511,21 +511,6 @@ void autoencoder::downpour_sgd_mibt(int lyr){
         iter_commit();
         // flag
         std::cout << "worker" << get_worker_id() << ", cost: " << ae_cost(lyr) << std::endl;
-        /*
-        // DEBUG
-        double cost = ae_cost(lyr);
-        std::cout << "worker" << get_worker_id() << ", cost: " << cost << std::endl;
-        std::cout << WgtBias[lyr].at("W1").mean() << std::endl;
-        std::cout << WgtBias[lyr].at("b1").mean() << std::endl;
-        std::cout << WgtBias[lyr].at("W2").mean() << std::endl;
-        std::cout << WgtBias[lyr].at("b2").mean() << std::endl;
-        std::cout << data.mean() << std::endl;
-        sync();
-        if (cost > 1e6) {
-          std::cout << WgtBias[lyr].at("b1") << std::endl;
-        }
-        cin.get();
-        */
       }
       mibt_cnt += 1;
     }  // traverse

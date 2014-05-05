@@ -10,28 +10,29 @@ namespace paracel{
 
 // construction function
 autoencoder::autoencoder(paracel::Comm comm, string hosts_dct_str,
-          string _input, string output, vector<int> _hidden_size,
+          string _input, string _output, vector<int> _hidden_size,
           int _visible_size, string method, string _acti_func_type, 
           int _rounds, double _alpha, bool _debug, int limit_s, 
           bool ssp_switch, double _lamb, double _sparsity_param, 
           double _beta, int _mibt_size, int _read_batch, 
           int _update_batch) :
-  paracel::paralg(hosts_dct_str, comm, output, _rounds, limit_s, ssp_switch),
-  worker_id(comm.get_rank()),
+  paracel::paralg(hosts_dct_str, comm, _output, _rounds, limit_s, ssp_switch),
   input(_input),
-  hidden_size(_hidden_size),
-  visible_size(_visible_size),
+  output(_output),
+  worker_id(comm.get_rank()),
+  rounds(_rounds),
+  mibt_size(_mibt_size),
+  read_batch(_read_batch),
+  update_batch(_update_batch),
   learning_method(method),
   acti_func_type(_acti_func_type),
-  rounds(_rounds),
-  alpha(_alpha),
   debug(_debug),
   lamb(_lamb),
   sparsity_param(_sparsity_param),
   beta(_beta),
-  mibt_size(_mibt_size),
-  read_batch(_read_batch),
-  update_batch(_update_batch){
+  alpha(_alpha),
+  hidden_size(_hidden_size),
+  visible_size(_visible_size) {
     //hidden_size.assign(_hidden_size.begin(), _hidden_size.end());
     n_lyr = hidden_size.size();  // number of hidden layers
     layer_size.assign(hidden_size.begin(), hidden_size.end());
@@ -46,7 +47,7 @@ autoencoder::~autoencoder() {}
 // init
 void autoencoder::ae_init(){
   assert(WgtBias.size() == 0);
-  double r = sqrt(1);
+  //double r = sqrt(1);
   unordered_map<string, MatrixXd> InitWgtBias;
   for (int i = 0; i < n_lyr; i++) {
     //MatrixXd W1 = (MatrixXd::Random(layer_size[i+1], layer_size[i]).array() * 2 * r - r).matrix();
@@ -588,13 +589,12 @@ void autoencoder::train(int lyr){
     return;
   }
   sync();
-  // NEEDED TO MODIFY!
-  //data = (WgtBias[lyr].at("W1") * data).colwise() + WgtBias[lyr].at("b1");
-  // TEMPORARILY INSTEAD...
+  // data for next layer
   data = WgtBias[lyr].at("W1") * data;
-  for (int i = 0; i < data.cols(); i++) {
-    data.col(i) += WgtBias[lyr].at("b1");
-  }
+  data = (WgtBias[lyr].at("W1") * data).colwise() + MatrixXd::ColXpr(WgtBias[lyr].at("b1").col(0));
+  //for (int i = 0; i < data.cols(); i++) {
+  //  data.col(i) += WgtBias[lyr].at("b1");
+  //}
   local_dump_Mat(data, (todir(input) + "data_" + std::to_string(lyr+1) + ".txt"), ' ');
   sync(); // NEEDED?
 }

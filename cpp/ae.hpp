@@ -11,6 +11,7 @@
 
 using namespace std;
 using Eigen::MatrixXd;
+using Eigen::ArrayXXd;
 using Eigen::VectorXd;
 
 // global var
@@ -35,7 +36,7 @@ class autoencoder: public paracel::paralg{
   void dump_mat(const MatrixXd &, const string);
   void dump_result(int);
   MatrixXd acti_func(const MatrixXd &) const;
-  MatrixXd acti_func_der(const MatrixXd &) const;
+  ArrayXXd acti_func_der(const MatrixXd &) const;
 
   // init
   void ae_init(void);
@@ -64,6 +65,7 @@ class autoencoder: public paracel::paralg{
 
  private:
   string input;  // where you store data over layers
+  string output; // where you dump out results
   int worker_id;
   int rounds;
   int n_lyr;  // number of hidden layers

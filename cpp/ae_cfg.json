@@ -2,6 +2,7 @@
   "input" : "/mfs/user/zhaojunbo/paracel/build/ae_dat/data/",
   "output" :  "/mfs/user/zhaojunbo/paracel/build/ae_dat/tmp/",
   "learning_method" : "mbdsgd",
+  "acti_func_type" : "sigmoid",
   "alpha" : 0.05,
   "beta" : 0,
   "rounds" : 20,

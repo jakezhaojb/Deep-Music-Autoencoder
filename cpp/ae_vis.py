@@ -2,8 +2,9 @@
 
 import os
 import sys
-sys.path.append("../")
+sys.path.append("/mfs/user/zhaojunbo/dpark/python_stack_AE_dpark_ReLU/visualization")
 import numpy as np
+import matplotlib.pyplot as plt
 from visualize import display_effect
 
 
@@ -25,10 +26,8 @@ def main(argv):
     assert len(argv) == 3, "Wrong command line parameters"
     wgt = read_wegiht_bias(argv[1])
     im = display_effect(wgt)
-    im.axis("off")
-    im.savefig(to_jpg(argv[2]))
-    #plt.axis("off")
-    #plt.savefig(to_jpg(argv[2]))
+    plt.axis("off")
+    plt.savefig(to_jpg(argv[2]))
 
 
 if __name__ == '__main__':

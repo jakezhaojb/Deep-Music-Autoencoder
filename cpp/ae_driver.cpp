@@ -48,6 +48,7 @@ int main(int argc, char *argv[])
   std::string output = pt.get<std::string>("output");
   std::string input = pt.get<std::string>("input");
   std::string learning_method = pt.get<std::string>("learning_method");
+  std::string acti_func_type = pt.get<std::string>("acti_func_type");
   double alpha = pt.get<double>("alpha");
   double beta = pt.get<double>("beta");
   double lamb = pt.get<double>("lamb");
@@ -68,7 +69,7 @@ int main(int argc, char *argv[])
 //    boost::filesystem::create_directories(output);
 
   {
-    paracel::autoencoder ae_solver(comm, FLAGS_server_info, input, output, hidden_size, visible_size, learning_method, rounds, alpha, false, limit_s,
+    paracel::autoencoder ae_solver(comm, FLAGS_server_info, input, output, hidden_size, visible_size, learning_method, acti_func_type, rounds, alpha, false, limit_s,
               true, lamb, sparsity_param, beta, mibt_size, read_batch, update_batch);
     ae_solver.train();
   }

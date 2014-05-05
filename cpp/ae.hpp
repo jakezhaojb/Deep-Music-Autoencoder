@@ -21,7 +21,7 @@ namespace paracel{
 class autoencoder: public paracel::paralg{
 
  public:
-  autoencoder(paracel::Comm, string, string, string, vector<int>, int, string = "sgd", int = 1, double = 0.01, bool = false, int = 0, bool = false, double = 0.001, double = 0.0001, double = 3., int = 1, int = 0, int = 0); // TO BE COMPLETED
+  autoencoder(paracel::Comm, string, string, string, vector<int>, int, string = "sgd", string = "sigmoid", int = 1, double = 0.01, bool = false, int = 0, bool = false, double = 0.001, double = 0.0001, double = 3., int = 1, int = 0, int = 0); // TO BE COMPLETED
   virtual ~autoencoder();
 
   void downpour_sgd(int); // downpour stochastic gradient descent
@@ -34,7 +34,8 @@ class autoencoder: public paracel::paralg{
   void train(); // top function
   void dump_mat(const MatrixXd &, const string);
   void dump_result(int);
-  MatrixXd acti_fun(const MatrixXd &, string = "sigmoid") const;
+  MatrixXd acti_func(const MatrixXd &) const;
+  MatrixXd acti_func_der(const MatrixXd &) const;
 
   // init
   void ae_init(void);
@@ -70,6 +71,7 @@ class autoencoder: public paracel::paralg{
   int read_batch;
   int update_batch;
   string learning_method;
+  string acti_func_type;
   bool debug = false;
   vector<double> loss_error;
   vector<unordered_map<string, MatrixXd> > WgtBias;

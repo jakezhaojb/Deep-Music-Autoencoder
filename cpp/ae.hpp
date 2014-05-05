@@ -5,6 +5,7 @@
 #include <vector>
 #include <unordered_map>
 #include <cstdlib>
+#include <fstream>
 #include <eigen3/Eigen/Dense>
 #include "ps.hpp"
 #include "utils.hpp"
@@ -33,8 +34,8 @@ class autoencoder: public paracel::paralg{
   void local_dump_Mat(const MatrixXd &, const string filename, const char = ',');
   void train(int);
   void train(); // top function
-  void dump_mat(const MatrixXd &, const string);
-  void dump_result(int);
+  void dump_mat(const MatrixXd &, const string) const;
+  void dump_result(int) const;
   MatrixXd acti_func(const MatrixXd &) const;
   ArrayXXd acti_func_der(const MatrixXd &) const;
 
@@ -57,11 +58,11 @@ class autoencoder: public paracel::paralg{
 
   // IT SHOULD BE CLASS-INVARIANT!!!
   // conversion between Eigen::MatrixXd and std::vector
-  MatrixXd vec_to_mat(vector<vector<double> > &); // row ordered
-  VectorXd vec_to_mat(vector<double> &);  // column ordered
-  MatrixXd vec_to_mat(vector<double> &, int);  // column ordered
-  MatrixXd vec_to_mat(vector<double> &, int, int);  // column ordered
-  vector<double> Mat_to_vec(MatrixXd &);  // column ordered
+  MatrixXd vec_to_mat(const vector<vector<double> > &); // row ordered
+  VectorXd vec_to_mat(const vector<double> &);  // column ordered
+  MatrixXd vec_to_mat(const vector<double> &, int);  // column ordered
+  MatrixXd vec_to_mat(const vector<double> &, int, int);  // column ordered
+  vector<double> Mat_to_vec(const MatrixXd &);  // column ordered
 
  private:
   string input;  // where you store data over layers

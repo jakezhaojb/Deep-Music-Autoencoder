@@ -1,6 +1,5 @@
 #include <algorithm>
 #include <iostream>
-#include <fstream>
 #include "ae.hpp"
 #include "ps.hpp"
 #include "utils.hpp"
@@ -117,10 +116,10 @@ double autoencoder::ae_cost(int lyr) const {
   int i;
   double cost = 0;
   VectorXd sparse_kl;  // sparse penalty
-  MatrixXd W1 = WgtBias[lyr].at("W1");
-  MatrixXd W2 = WgtBias[lyr].at("W2");
-  VectorXd b1 = WgtBias[lyr].at("b1");
-  VectorXd b2 = WgtBias[lyr].at("b2");
+  const MatrixXd & W1 = WgtBias[lyr].at("W1");
+  const MatrixXd & W2 = WgtBias[lyr].at("W2");
+  const VectorXd & b1 = WgtBias[lyr].at("b1");
+  const VectorXd & b2 = WgtBias[lyr].at("b2");
   unordered_map<int, VectorXd> a;
   unordered_map<int, VectorXd> z;
   if (beta != 0 && learning_method == "dbgd") {
@@ -164,10 +163,10 @@ double autoencoder::ae_cost(int lyr) const {
 
 // compute batch gradient
 unordered_map<string, MatrixXd> autoencoder::ae_batch_grad(int lyr) const{
-  MatrixXd W1 = WgtBias[lyr].at("W1");
-  MatrixXd W2 = WgtBias[lyr].at("W2");
-  VectorXd b1 = WgtBias[lyr].at("b1");
-  VectorXd b2 = WgtBias[lyr].at("b2");
+  const MatrixXd & W1 = WgtBias[lyr].at("W1");
+  const MatrixXd & W2 = WgtBias[lyr].at("W2");
+  const VectorXd & b1 = WgtBias[lyr].at("b1");
+  const VectorXd & b2 = WgtBias[lyr].at("b2");
 
   MatrixXd W1_delta = MatrixXd::Zero(W1.rows(), W1.cols());
   MatrixXd W2_delta = MatrixXd::Zero(W2.rows(), W2.cols());
@@ -196,17 +195,12 @@ unordered_map<string, MatrixXd> autoencoder::ae_batch_grad(int lyr) const{
     b2_delta += sigma[3];
   }
 
-  MatrixXd W1_grad = (W1_delta.array() / data.cols() + lamb * W1.array()).matrix();
-  MatrixXd W2_grad = (W2_delta.array() / data.cols() + lamb * W2.array()).matrix();
-  VectorXd b1_grad = (b1_delta.array() / data.cols()).matrix();
-  VectorXd b2_grad = (b2_delta.array() / data.cols()).matrix();
-
   // return the gradients
   unordered_map<string, MatrixXd> WgtBiasGrad;
-  WgtBiasGrad["W1"] = W1_grad;
-  WgtBiasGrad["W2"] = W2_grad;
-  WgtBiasGrad["b1"] = b1_grad;
-  WgtBiasGrad["b2"] = b2_grad;
+  WgtBiasGrad["W1"] = (W1_delta.array() / data.cols() + lamb * W1.array()).matrix();
+  WgtBiasGrad["W2"] = (W2_delta.array() / data.cols() + lamb * W2.array()).matrix();
+  WgtBiasGrad["b1"] = (b1_delta.array() / data.cols()).matrix();
+  WgtBiasGrad["b2"] = (b2_delta.array() / data.cols()).matrix();
 
   return WgtBiasGrad;
 }
@@ -215,10 +209,10 @@ unordered_map<string, MatrixXd> autoencoder::ae_batch_grad(int lyr) const{
 // compute the stochastic gradient
 unordered_map<string, MatrixXd> autoencoder::ae_stoc_grad(int lyr, int index) const {
   unordered_map<string, MatrixXd> WgtBiasGrad;
-  MatrixXd W1 = WgtBias[lyr].at("W1");
-  MatrixXd W2 = WgtBias[lyr].at("W2");
-  VectorXd b1 = WgtBias[lyr].at("b1");
-  VectorXd b2 = WgtBias[lyr].at("b2");
+  const MatrixXd & W1 = WgtBias[lyr].at("W1");
+  const MatrixXd & W2 = WgtBias[lyr].at("W2");
+  const VectorXd & b1 = WgtBias[lyr].at("b1");
+  const VectorXd & b2 = WgtBias[lyr].at("b2");
   
   // means no mini-batch
   unordered_map<int, VectorXd> a;
@@ -234,15 +228,10 @@ unordered_map<string, MatrixXd> autoencoder::ae_stoc_grad(int lyr, int index) co
   //sigma[3] = (-(a[1]-a[3]).array() * (a[3].array()*(1-a[3].array()))).matrix();
   //sigma[2] = (((W2.transpose()*sigma[3]).array())*a[2].array()*(1-a[2].array())).matrix();
   // gradient of that sample
-  MatrixXd W1_grad = sigma[2] * a[1].transpose();  
-  MatrixXd W2_grad = sigma[3] * a[2].transpose();  
-  VectorXd b1_grad = sigma[2];  
-  VectorXd b2_grad = sigma[3];  
-
-  WgtBiasGrad["W1"] = W1_grad;
-  WgtBiasGrad["W2"] = W2_grad;
-  WgtBiasGrad["b1"] = b1_grad;
-  WgtBiasGrad["b2"] = b2_grad;
+  WgtBiasGrad["W1"] = sigma[2] * a[1].transpose();  
+  WgtBiasGrad["W2"] = sigma[3] * a[2].transpose();  
+  WgtBiasGrad["b1"] = sigma[2];  
+  WgtBiasGrad["b2"] = sigma[3];  
 
   return WgtBiasGrad;
 }
@@ -253,33 +242,15 @@ unordered_map<string, MatrixXd> autoencoder::ae_mibt_stoc_grad(int lyr, vector<i
 
   size_t mini_batch_size = index_data.size();
   unordered_map<string, MatrixXd> WgtBiasGrad;
-  MatrixXd W1 = WgtBias[lyr].at("W1");
-  MatrixXd W2 = WgtBias[lyr].at("W2");
-  VectorXd b1 = WgtBias[lyr].at("b1");
-  VectorXd b2 = WgtBias[lyr].at("b2");
+  const MatrixXd & W1 = WgtBias[lyr].at("W1");
+  const MatrixXd & W2 = WgtBias[lyr].at("W2");
+  const VectorXd & b1 = WgtBias[lyr].at("b1");
+  const VectorXd & b2 = WgtBias[lyr].at("b2");
   
   if (!(mini_batch_size-1)) {
     // means no mini-batch
-    unordered_map<int, VectorXd> a;
-    unordered_map<int, VectorXd> z;
-    unordered_map<int, VectorXd> sigma;
-    a[1] = data.col(index_data[0]);
-    z[2] = W1 * a[1] + b1;
-    a[2] = acti_func(z[2]);
-    z[3] = W2 * a[2] + b2;
-    a[3] = acti_func(z[3]);
-    sigma[3] = (-(a[1]-a[3]).array() * (acti_func_der(a[3]))).matrix();
-    sigma[2] = (((W2.transpose()*sigma[3]).array())*acti_func_der(a[2])).matrix();
-    // gradient of that sample
-    MatrixXd W1_grad = sigma[2] * a[1].transpose();  
-    MatrixXd W2_grad = sigma[3] * a[2].transpose();  
-    VectorXd b1_grad = sigma[2];  
-    VectorXd b2_grad = sigma[3];  
+    WgtBiasGrad = ae_stoc_grad(lyr, index_data[0]);
 
-    WgtBiasGrad["W1"] = W1_grad;
-    WgtBiasGrad["W2"] = W2_grad;
-    WgtBiasGrad["b1"] = b1_grad;
-    WgtBiasGrad["b2"] = b2_grad;
   }else{
     // Got a mini-batch SGD
     MatrixXd W1_delta = MatrixXd::Zero(W1.rows(), W1.cols());
@@ -289,7 +260,6 @@ unordered_map<string, MatrixXd> autoencoder::ae_mibt_stoc_grad(int lyr, vector<i
     unordered_map<int, VectorXd> a;
     unordered_map<int, VectorXd> z;
     unordered_map<int, VectorXd> sigma;
-
     /*
     // Get rho first
     VectorXd rho = VectorXd::Zero(b1.size());
@@ -316,17 +286,10 @@ unordered_map<string, MatrixXd> autoencoder::ae_mibt_stoc_grad(int lyr, vector<i
       b1_delta += sigma[2];
       b2_delta += sigma[3];
     }
-
-    MatrixXd W1_grad = (W1_delta.array() / mini_batch_size + lamb * W1.array()).matrix();
-    MatrixXd W2_grad = (W2_delta.array() / mini_batch_size + lamb * W2.array()).matrix();
-    VectorXd b1_grad = (b1_delta.array() / mini_batch_size).matrix();
-    VectorXd b2_grad = (b2_delta.array() / mini_batch_size).matrix();
-
-    // return the gradients
-    WgtBiasGrad["W1"] = W1_grad;
-    WgtBiasGrad["W2"] = W2_grad;
-    WgtBiasGrad["b1"] = b1_grad;
-    WgtBiasGrad["b2"] = b2_grad;
+    WgtBiasGrad["W1"] = (W1_delta.array() / mini_batch_size + lamb * W1.array()).matrix();
+    WgtBiasGrad["W2"] = (W2_delta.array() / mini_batch_size + lamb * W2.array()).matrix();
+    WgtBiasGrad["b1"] = (b1_delta.array() / mini_batch_size).matrix();
+    WgtBiasGrad["b2"] = (b2_delta.array() / mini_batch_size).matrix();
 
   }  // else ends
   return WgtBiasGrad;
@@ -562,7 +525,6 @@ void autoencoder::train(int lyr){
   string filename = todir(input) + "data_" + std::to_string(lyr) + ".txt";
   auto lines = paracel_load(filename);
   local_parser(lines, ' '); 
-  sync();
   data = vec_to_mat(samples).transpose();   
   assert(data.rows() == layer_size[lyr]);  // QA
   if (learning_method == "dbgd") {
@@ -588,15 +550,16 @@ void autoencoder::train(int lyr){
     std::cout << "worker" << get_worker_id() << " learning method not supported." << std::endl;
     return;
   }
-  sync();
   // data for next layer
-  data = WgtBias[lyr].at("W1") * data;
   data = (WgtBias[lyr].at("W1") * data).colwise() + MatrixXd::ColXpr(WgtBias[lyr].at("b1").col(0));
-  //for (int i = 0; i < data.cols(); i++) {
-  //  data.col(i) += WgtBias[lyr].at("b1");
-  //}
-  local_dump_Mat(data, (todir(input) + "data_" + std::to_string(lyr+1) + ".txt"), ' ');
-  sync(); // NEEDED?
+  if (get_worker_id() == 0) {  // delete the previous data file, since it is stored by ios::app
+    string rmname;
+    rmname = todir(input) + "data_" + std::to_string(lyr+1) + ".txt";
+    std::remove(rmname.c_str());
+  }
+  sync();
+  local_dump_Mat(data.transpose(), (todir(input) + "data_" + std::to_string(lyr+1) + ".txt"), ' ');
+  data.resize(0, 0); // data clear
 }
 
 
@@ -605,7 +568,9 @@ void autoencoder::train(){
   for (int i = 0; i < n_lyr; i++) {
     std::cout << "worker" << get_worker_id() << " starts training layer " << i+1 << std::endl;
     train(i);
-    dump_result(i);
+    if (get_worker_id() == 0) {
+      dump_result(i);
+    }
   }
   sync();
   std::cout << "Mission complete" << std::endl;
@@ -646,7 +611,7 @@ void autoencoder::local_dump_Mat(const MatrixXd & m, const string filename, cons
   os.open(filename, std::ofstream::app);
   for (int i = 0; i < m.rows(); i++) {
     for (int j = 0; j < m.cols(); j++) {
-      os << std::to_string(data(i, j)) << sep;
+      os << std::to_string(m(i, j)) << sep;
     }
     os << "\n";
   }
@@ -654,7 +619,7 @@ void autoencoder::local_dump_Mat(const MatrixXd & m, const string filename, cons
 }
 
 
-MatrixXd autoencoder::vec_to_mat(vector< vector<double> > & v) {
+MatrixXd autoencoder::vec_to_mat(const vector< vector<double> > & v) {
   MatrixXd m(v.size(), v[0].size());
   for (size_t i = 0; i < v.size(); i++) {
     m.row(i) = VectorXd::Map(&v[i][0], v[i].size());  // row ordered
@@ -663,26 +628,26 @@ MatrixXd autoencoder::vec_to_mat(vector< vector<double> > & v) {
 }
 
 
-VectorXd autoencoder::vec_to_mat(vector<double> & v) {
+VectorXd autoencoder::vec_to_mat(const vector<double> & v) {
   VectorXd m(v.size());
   m = VectorXd::Map(&v[0], v.size()); // column ordered
   return m;
 }
 
-MatrixXd autoencoder::vec_to_mat(vector<double> & v, int r){
+MatrixXd autoencoder::vec_to_mat(const vector<double> & v, int r){
   assert( v.size() % r == 0);
   int c = v.size() / r;
   return vec_to_mat(v, r, c);
 }
 
-MatrixXd autoencoder::vec_to_mat(vector<double> & v, int r, int c){
+MatrixXd autoencoder::vec_to_mat(const vector<double> & v, int r, int c){
   assert( (int)v.size() == r * c );
   MatrixXd m(r, c);
   m = MatrixXd::Map(&v[0], r, c); // column ordered
   return m;
 }
 
-vector<double> autoencoder::Mat_to_vec(MatrixXd & m){
+vector<double> autoencoder::Mat_to_vec(const MatrixXd & m){
   vector<double> v(m.size());
   // column ordered
   Eigen::Map<MatrixXd>(v.data(), m.rows(), m.cols()) = m;
@@ -709,7 +674,7 @@ void autoencoder::_paracel_bupdate(string key, MatrixXd & m){
 }
 
 
-void autoencoder::dump_mat(const MatrixXd & m, const string filename){
+void autoencoder::dump_mat(const MatrixXd & m, const string filename) const {
   std::fstream fout;
   fout.open(filename, std::ios::out);
   for (int i = 0; i < m.rows(); i++) {
@@ -722,37 +687,13 @@ void autoencoder::dump_mat(const MatrixXd & m, const string filename){
 }
 
 
-void autoencoder::dump_result(int lyr) {
+void autoencoder::dump_result(int lyr) const {
   MatrixXd tmp;
-  if (get_worker_id() == 0) {
-    dump_mat(WgtBias[lyr].at("W1"), (todir(output) + "ae_layer_" + std::to_string(lyr) + "_W1"));
-    dump_mat(WgtBias[lyr].at("W2"), (todir(output) + "ae_layer_" + std::to_string(lyr) + "_W2"));
-    dump_mat(WgtBias[lyr].at("b1"), (todir(output) + "ae_layer_" + std::to_string(lyr) + "_b1"));
-    dump_mat(WgtBias[lyr].at("b2"), (todir(output) + "ae_layer_" + std::to_string(lyr) + "_b2"));
-    /*
-    for (int i = 0; i < WgtBias[lyr].at("W1").rows(); i++) {
-      tmp = WgtBias[lyr].at("W1").row(i);
-      paracel_dump_vector(Mat_to_vec(tmp), 
-            ("ae_layer_" + std::to_string(lyr) + "_W1_"), ',', false);
-    }
-    for (int i = 0; i < WgtBias[lyr].at("W2").rows(); i++) {
-      tmp = WgtBias[lyr].at("W2").row(i);
-      paracel_dump_vector(Mat_to_vec(tmp), 
-            ("ae_layer_" + std::to_string(lyr) + "_W2_"), ',', false);
-    }
-    for (int i = 0; i < WgtBias[lyr].at("b1").rows(); i++) {
-      tmp = WgtBias[lyr].at("b1").row(i);
-      paracel_dump_vector(Mat_to_vec(tmp), 
-            ("ae_layer_" + std::to_string(lyr) + "_b1_"), ',', false);
-    }
-    for (int i = 0; i < WgtBias[lyr].at("b2").rows(); i++) {
-      tmp = WgtBias[lyr].at("b2").row(i);
-      paracel_dump_vector(Mat_to_vec(tmp), 
-            ("ae_layer_" + std::to_string(lyr) + "_b2_"), ',', false);
-    }
-    */
+  dump_mat(WgtBias[lyr].at("W1"), (todir(output) + "ae_layer_" + std::to_string(lyr) + "_W1"));
+  dump_mat(WgtBias[lyr].at("W2"), (todir(output) + "ae_layer_" + std::to_string(lyr) + "_W2"));
+  dump_mat(WgtBias[lyr].at("b1"), (todir(output) + "ae_layer_" + std::to_string(lyr) + "_b1"));
+  dump_mat(WgtBias[lyr].at("b2"), (todir(output) + "ae_layer_" + std::to_string(lyr) + "_b2"));
   }
-}
 
 
 } // namespace paracel

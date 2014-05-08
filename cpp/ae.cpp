@@ -490,6 +490,7 @@ void autoencoder::downpour_sgd_mibt(int lyr){
           vector<int> tmp;
           tmp.assign(i, idx.end());
           mibt_idx.push_back(tmp);
+          break;
         }
       }
       vector<int> tmp;
@@ -556,7 +557,7 @@ void autoencoder::train(int lyr){
   local_parser(lines, ' '); 
   data = vec_to_mat(samples).transpose();   
   if (corrupt) {
-    std::cout << "Setting for Denoising" << std::endl;
+    std::cout << "worker" << get_worker_id() << " Setting for Denoising" << std::endl;
     corrupt_data();
   }
   assert(data.rows() == layer_size[lyr]);  // QA

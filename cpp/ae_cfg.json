@@ -5,13 +5,16 @@
   "acti_func_type" : "sigmoid",
   "alpha" : 0.05,
   "beta" : 0,
-  "rounds" : 20,
+  "rounds" : 10,
   "limit_s" : 2,
   "mibt_size" : 40,
-  "lamb" : 0.0001,
+  "lamb" : 0.0,
   "sparsity_param" : 0.05,
   "visible_size" : 784,
   "hidden_size" : "256,64,25",
   "read_batch" : 4,
-  "update_batch" : 4
+  "update_batch" : 4,
+  "corrupt" : true,
+  "deviation" : 0.25,
+  "frac_of_corrupt" : 0.1
 }

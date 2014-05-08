@@ -23,7 +23,7 @@ namespace paracel{
 class autoencoder: public paracel::paralg{
 
  public:
-  autoencoder(paracel::Comm, string, string, string, vector<int>, int, string = "sgd", string = "sigmoid", int = 1, double = 0.01, bool = false, int = 0, bool = false, double = 0.001, double = 0.0001, double = 3., int = 1, int = 0, int = 0); // TO BE COMPLETED
+  autoencoder(paracel::Comm, string, string, string, vector<int>, int, string = "sgd", string = "sigmoid", int = 1, double = 0.01, bool = false, int = 0, bool = false, double = 0.001, double = 0.0001, double = 3., int = 1, int = 0, int = 0, bool = false, double = 0.30, double = 0.1); // TO BE COMPLETED
   virtual ~autoencoder();
 
   void downpour_sgd(int); // downpour stochastic gradient descent
@@ -49,6 +49,9 @@ class autoencoder: public paracel::paralg{
   unordered_map<string, MatrixXd> ae_stoc_grad(int, int) const;
   // BP with Mini-batch
   unordered_map<string, MatrixXd> ae_mibt_stoc_grad(int, vector<int>) const;
+
+  // for DAE
+  void corrupt_data();
 
   // compatinility of paracel and MatrixXd
   void _paracel_write(string key, MatrixXd & m);
@@ -88,6 +91,10 @@ class autoencoder: public paracel::paralg{
   vector<int> hidden_size;
   int visible_size;
   vector<int> layer_size;  // combine hidden_size and layer_size together
+  // for DAE
+  bool corrupt;
+  double dvt;  // deviation of Gaussion noise
+  double foc;  // fraction of corrupted neurons 
 
 }; // class
 

@@ -4,6 +4,7 @@
 #include "ps.hpp"
 #include "utils.hpp"
 #include <cmath>
+#include <random>
 
 namespace paracel{
 
@@ -13,8 +14,8 @@ autoencoder::autoencoder(paracel::Comm comm, string hosts_dct_str,
           int _visible_size, string method, string _acti_func_type, 
           int _rounds, double _alpha, bool _debug, int limit_s, 
           bool ssp_switch, double _lamb, double _sparsity_param, 
-          double _beta, int _mibt_size, int _read_batch, 
-          int _update_batch) :
+          double _beta, int _mibt_size, int _read_batch, int _update_batch, 
+          bool _corrupt, double _dvt, double _foc) :
   paracel::paralg(hosts_dct_str, comm, _output, _rounds, limit_s, ssp_switch),
   input(_input),
   output(_output),
@@ -31,7 +32,10 @@ autoencoder::autoencoder(paracel::Comm comm, string hosts_dct_str,
   beta(_beta),
   alpha(_alpha),
   hidden_size(_hidden_size),
-  visible_size(_visible_size) {
+  visible_size(_visible_size),
+  corrupt(_corrupt),
+  dvt(_dvt),
+  foc(_foc){
     //hidden_size.assign(_hidden_size.begin(), _hidden_size.end());
     n_lyr = hidden_size.size();  // number of hidden layers
     layer_size.assign(hidden_size.begin(), hidden_size.end());
@@ -230,6 +234,8 @@ unordered_map<string, MatrixXd> autoencoder::ae_stoc_grad(int lyr, int index) co
   // gradient of that sample
   WgtBiasGrad["W1"] = sigma[2] * a[1].transpose();  
   WgtBiasGrad["W2"] = sigma[3] * a[2].transpose();  
+  WgtBiasGrad["W1"] = (WgtBiasGrad.at("W1").array() + lamb * W1.array()).matrix();  
+  WgtBiasGrad["W2"] = (WgtBiasGrad.at("W2").array() + lamb * W2.array()).matrix();  
   WgtBiasGrad["b1"] = sigma[2];  
   WgtBiasGrad["b2"] = sigma[3];  
 
@@ -293,6 +299,29 @@ unordered_map<string, MatrixXd> autoencoder::ae_mibt_stoc_grad(int lyr, vector<i
 
   }  // else ends
   return WgtBiasGrad;
+}
+
+// for DAE
+inline void autoencoder::corrupt_data(){
+  assert(corrupt);
+  assert(dvt < 0.5 + 1e-4);
+  vector<int> id;
+  int corrupt_elem_num = data.rows();
+  VectorXd gauss_array = VectorXd::Zero(corrupt_elem_num);
+  for (int i = 0; i < data.cols(); i++) {
+    id.push_back(i);
+  }
+  std::random_shuffle(id.begin(), id.end());
+  int corrupt_data_num = floor(data.cols() * foc);
+  id.erase(id.begin() + corrupt_data_num, id.end());
+  for (auto it = id.begin(); it != id.end(); ++it) {
+    std::default_random_engine generator;
+    std::normal_distribution<double> distribution(0.0, dvt);
+    for (int i = 0; i < corrupt_elem_num; i++) {
+      gauss_array(i) = distribution(generator);
+    }
+    data.col(*it) = data.col(*it) + gauss_array;
+  }
 }
 
 // distributed bgd
@@ -526,6 +555,10 @@ void autoencoder::train(int lyr){
   auto lines = paracel_load(filename);
   local_parser(lines, ' '); 
   data = vec_to_mat(samples).transpose();   
+  if (corrupt) {
+    std::cout << "Setting for Denoising" << std::endl;
+    corrupt_data();
+  }
   assert(data.rows() == layer_size[lyr]);  // QA
   if (learning_method == "dbgd") {
     std::cout << "worker" << get_worker_id() << " chose distributed batch gradient descent" << std::endl;
@@ -619,7 +652,7 @@ void autoencoder::local_dump_Mat(const MatrixXd & m, const string filename, cons
 }
 
 
-MatrixXd autoencoder::vec_to_mat(const vector< vector<double> > & v) {
+inline MatrixXd autoencoder::vec_to_mat(const vector< vector<double> > & v) {
   MatrixXd m(v.size(), v[0].size());
   for (size_t i = 0; i < v.size(); i++) {
     m.row(i) = VectorXd::Map(&v[i][0], v[i].size());  // row ordered
@@ -628,26 +661,26 @@ MatrixXd autoencoder::vec_to_mat(const vector< vector<double> > & v) {
 }
 
 
-VectorXd autoencoder::vec_to_mat(const vector<double> & v) {
+inline VectorXd autoencoder::vec_to_mat(const vector<double> & v) {
   VectorXd m(v.size());
   m = VectorXd::Map(&v[0], v.size()); // column ordered
   return m;
 }
 
-MatrixXd autoencoder::vec_to_mat(const vector<double> & v, int r){
+inline MatrixXd autoencoder::vec_to_mat(const vector<double> & v, int r){
   assert( v.size() % r == 0);
   int c = v.size() / r;
   return vec_to_mat(v, r, c);
 }
 
-MatrixXd autoencoder::vec_to_mat(const vector<double> & v, int r, int c){
+inline MatrixXd autoencoder::vec_to_mat(const vector<double> & v, int r, int c){
   assert( (int)v.size() == r * c );
   MatrixXd m(r, c);
   m = MatrixXd::Map(&v[0], r, c); // column ordered
   return m;
 }
 
-vector<double> autoencoder::Mat_to_vec(const MatrixXd & m){
+inline vector<double> autoencoder::Mat_to_vec(const MatrixXd & m){
   vector<double> v(m.size());
   // column ordered
   Eigen::Map<MatrixXd>(v.data(), m.rows(), m.cols()) = m;
@@ -655,21 +688,21 @@ vector<double> autoencoder::Mat_to_vec(const MatrixXd & m){
 }
 
 
-void autoencoder::_paracel_write(string key, MatrixXd & m){
+inline void autoencoder::_paracel_write(string key, MatrixXd & m){
   paracel_write(key, Mat_to_vec(m));
 }
 
-MatrixXd autoencoder::_paracel_read(string key, int r, int c){
+inline MatrixXd autoencoder::_paracel_read(string key, int r, int c){
   vector<double> v = paracel_read<vector<double> >(key);
   return vec_to_mat(v, r, c);
 }
 
-VectorXd autoencoder::_paracel_read(string key){
+inline VectorXd autoencoder::_paracel_read(string key){
   vector<double> v = paracel_read<vector<double> >(key);
   return vec_to_mat(v);
 }
 
-void autoencoder::_paracel_bupdate(string key, MatrixXd & m){
+inline void autoencoder::_paracel_bupdate(string key, MatrixXd & m){
   paracel_bupdate(key, Mat_to_vec(m));
 }
 

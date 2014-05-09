@@ -7,7 +7,7 @@
   "beta" : 0,
   "rounds" : 50,
   "limit_s" : 2,
-  "mibt_size" : 256,
+  "mibt_size" : 128,
   "lamb" : 0.0,
   "sparsity_param" : 0.05,
   "visible_size" : 784,

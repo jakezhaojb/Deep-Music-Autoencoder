@@ -5,7 +5,7 @@
   "acti_func_type" : "sigmoid",
   "alpha" : 0.05,
   "beta" : 0,
-  "rounds" : 20,
+  "rounds" : 50,
   "limit_s" : 2,
   "mibt_size" : 256,
   "lamb" : 0.0,

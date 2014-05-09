@@ -551,41 +551,43 @@ void autoencoder::downpour_sgd_mibt(int lyr){
 
 
 void autoencoder::train(int lyr){
-  int i;
-  string filename = todir(input) + "data_" + std::to_string(lyr) + ".txt";
-  auto lines = paracel_load(filename);
-  local_parser(lines, ' '); 
-  data = vec_to_mat(samples).transpose();   
-  if (corrupt) {
-    std::cout << "worker" << get_worker_id() << " Setting for Denoising" << std::endl;
-    corrupt_data();
+  if (lyr == 0) {
+    //string filename = todir(input) + "data_" + std::to_string(lyr) + ".txt";
+    string filename = todir(input) + "data_0.txt";
+    auto lines = paracel_load(filename);
+    local_parser(lines, ' '); 
+    data = vec_to_mat(samples).transpose();   
+    samples.resize(0);
+    lines.resize(0);
+
+    // DAE configuration
+    if (corrupt) {
+      std::cout << "worker" << get_worker_id() << " Setting for Denoising" << std::endl;
+      corrupt_data();
+    }
   }
   assert(data.rows() == layer_size[lyr]);  // QA
   if (learning_method == "dbgd") {
     std::cout << "worker" << get_worker_id() << " chose distributed batch gradient descent" << std::endl;
     set_total_iters(rounds); // default value
-    for (i = 0; i < n_lyr; i++) {
-      distribute_bgd(lyr);
-    }
+    distribute_bgd(lyr);
   } else if (learning_method == "dsgd") {
     std::cout << "worker" << get_worker_id() << " chose downpour stochasitc gradient descent" << std::endl;
     set_total_iters(rounds * ceil(data.cols() / float(update_batch))); // consider update_batch
-    for (i = 0; i < n_lyr; i++) {
-      downpour_sgd(lyr);
-    }
+    downpour_sgd(lyr);
   } else if (learning_method == "mbdsgd") {
     std::cout << "worker" << get_worker_id() << " chose mini-batch downpour stochastic gradient descent" << std::endl;
     int n_mibt = ceil(data.cols() / float(mibt_size));
-    set_total_iters(rounds * ceil(n_mibt / float(update_batch))); // default value
-    for (i = 0; i < n_lyr; i++) {
-      downpour_sgd_mibt(lyr);
-    }
+    set_total_iters(rounds * ceil(n_mibt / float(update_batch))); // consider update_batch
+    downpour_sgd_mibt(lyr);
   } else {
     std::cout << "worker" << get_worker_id() << " learning method not supported." << std::endl;
     return;
   }
   // data for next layer
   data = (WgtBias[lyr].at("W1") * data).colwise() + MatrixXd::ColXpr(WgtBias[lyr].at("b1").col(0));
+  // Discard IO operations
+  /*
   if (get_worker_id() == 0) {  // delete the previous data file, since it is stored by ios::app
     string rmname;
     rmname = todir(input) + "data_" + std::to_string(lyr+1) + ".txt";
@@ -594,6 +596,7 @@ void autoencoder::train(int lyr){
   sync();
   local_dump_Mat(data.transpose(), (todir(input) + "data_" + std::to_string(lyr+1) + ".txt"), ' ');
   data.resize(0, 0); // data clear
+  */
 }
 
 

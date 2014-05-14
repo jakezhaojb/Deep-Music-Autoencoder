@@ -1,5 +1,5 @@
 {
-  "input" : "/mfs/user/zhaojunbo/paracel/build/ae_dat/data/",
+  "input" : "/mfs/user/zhaojunbo/dpark/python_stack_AE_dpark_ReLU/cpp/songs/dataset",
   "output" :  "/mfs/user/zhaojunbo/paracel/build/ae_dat/tmp/",
   "learning_method" : "mbdsgd",
   "acti_func_type" : "sigmoid",

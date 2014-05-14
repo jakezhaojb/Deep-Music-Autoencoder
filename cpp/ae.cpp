@@ -552,8 +552,7 @@ void autoencoder::downpour_sgd_mibt(int lyr){
 
 void autoencoder::train(int lyr){
   if (lyr == 0) {
-    //string filename = todir(input) + "data_" + std::to_string(lyr) + ".txt";
-    string filename = todir(input) + "data_0.txt";
+    string filename = todir(input); // distributed stored data
     auto lines = paracel_load(filename);
     local_parser(lines, ' '); 
     data = vec_to_mat(samples).transpose();   

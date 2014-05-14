@@ -16,25 +16,26 @@ sid = []
 
 
 def get_song_ids_with_label():
-    sids_with_label = np.load('song_ids_with_genre_ids.npy')
+    sids_with_label = np.load('dataset/song_ids_with_genre_ids.npy')
     return map(lambda x: tuple(x), sids_with_label)
 
 
-def get_song_ids_with_label_train():
-    sids_with_label_train = np.load('song_ids_with_genre_ids_train.npy')
+def get_song_ids_with_label_train(size=None):
+    sids_with_label_train = np.load('dataset/song_ids_with_genre_ids_train.npy')
+    sids_with_label_train = sids_with_label_train[:size]
     return map(lambda x: tuple(x), sids_with_label_train)
 
-def get_song_ids_with_label_test():
-
-    sids_with_label_test = np.load('song_ids_with_genre_ids_test.npy')
+def get_song_ids_with_label_test(size=None):
+    sids_with_label_test = np.load('dataset/song_ids_with_genre_ids_test.npy')
+    sids_with_label_test = sids_with_label_test[:size]
     return map(lambda x: tuple(x), sids_with_label_test)
 
 
 def main(argv):
     # Generate whole set song ids with genre_ids
     print 'Generate whole set.'
-    if os.path.isfile('song_ids_with_genre_ids.npy'):
-        print "'song_ids_with_genre_ids.npy' was generated."
+    if os.path.isfile('dataset/song_ids_with_genre_ids.npy'):
+        print "'dataset/song_ids_with_genre_ids.npy' was generated."
     else:
         # extracting song ids of which involve genre_ids
         for filename in FILES:
@@ -59,14 +60,14 @@ def main(argv):
                     pass
             fin.close()
         # save the .npy file 
-        np.save('song_ids_with_genre_ids.npy', np.array(zip(labels, sid)))
+        np.save('dataset/song_ids_with_genre_ids.npy', np.array(zip(labels, sid)))
                     
     # Generate training and testing set, with averagly distributed GID
     if len(argv) is 1:
         flag = False; # whether generate?
         print 'To generate training and testing sets, usage: sid_label.py <training_set_size>'
     elif len(argv) is 2:
-        if os.path.isfile('song_ids_with_genre_ids_train.npy'):
+        if os.path.isfile('dataset/song_ids_with_genre_ids_train.npy'):
             while 1:
                 print 'Are you sure to overwrite the training and testing sets file \
                         (song_ids_with_genre_ids_train.npy, song_ids_with_genre_ids_test.npy)? [Y/n]'
@@ -74,8 +75,8 @@ def main(argv):
                 if key is 'Y':
                     flag = True
                     print 'Will regenerate training and testing sets.'
-                    os.remove('song_ids_with_genre_ids_train.npy')
-                    os.remove('song_ids_with_genre_ids_test.npy')
+                    os.remove('dataset/song_ids_with_genre_ids_train.npy')
+                    os.remove('dataset/song_ids_with_genre_ids_test.npy')
                     break
                 elif key is 'n':
                     flag = False
@@ -112,8 +113,8 @@ def main(argv):
             sids_with_label_gid_te = [sids_with_label[i] for i in idx_te]
             sids_with_label_train.extend(sids_with_label_gid_tr)
             sids_with_label_test.extend(sids_with_label_gid_te)
-        np.save('song_ids_with_genre_ids_train.npy', np.array(sids_with_label_train))
-        np.save('song_ids_with_genre_ids_test.npy', np.array(sids_with_label_test))
+        np.save('dataset/song_ids_with_genre_ids_train.npy', np.array(sids_with_label_train))
+        np.save('dataset/song_ids_with_genre_ids_test.npy', np.array(sids_with_label_test))
 
     print 'Generating done'
 

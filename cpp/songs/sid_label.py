@@ -27,7 +27,7 @@ def get_song_ids_with_label_train(size=None):
 
 def get_song_ids_with_label_test(size=None):
     sids_with_label_test = np.load('dataset/song_ids_with_genre_ids_test.npy')
-    sids_with_label_test = sids_with_label_test[:size]
+    sids_with_label_test = sids_with_label_test[-size:]  # songs not exists at the head of this list
     return map(lambda x: tuple(x), sids_with_label_test)
 
 

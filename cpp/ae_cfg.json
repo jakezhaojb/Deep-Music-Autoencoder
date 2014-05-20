@@ -1,20 +1,20 @@
 {
-  "input" : "/mfs/user/zhaojunbo/dpark/python_stack_AE_dpark_ReLU/cpp/songs/dataset",
-  "output" :  "/mfs/user/zhaojunbo/paracel/build/ae_dat/tmp/",
+  "input" : "/mfs/user/zhaojunbo/paracel/alg/ae/songs/dataset/data_spec_train",
+  "output" :  "/mfs/user/zhaojunbo/paracel/alg/ae/songs/dataset/output_sdae",
   "learning_method" : "mbdsgd",
   "acti_func_type" : "sigmoid",
   "alpha" : 0.005,
   "beta" : 0,
   "rounds" : 100,
   "limit_s" : 2,
-  "mibt_size" : 128,
+  "mibt_size" : 32,
   "lamb" : 0.0,
   "sparsity_param" : 0.05,
-  "visible_size" : 784,
-  "hidden_size" : "256,64,25",
+  "visible_size" : 15390,
+  "hidden_size" : "8192,2048,512,128",
   "read_batch" : 4,
   "update_batch" : 4,
   "corrupt" : true,
   "deviation" : 0.25,
-  "frac_of_corrupt" : 0.1
+  "frac_of_corrupt" : 0.50
 }

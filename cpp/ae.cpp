@@ -552,9 +552,9 @@ void autoencoder::downpour_sgd_mibt(int lyr){
 
 void autoencoder::train(int lyr){
   if (lyr == 0) {
-    string filename = todir(input); // distributed stored data
-    auto lines = paracel_load(filename);
-    local_parser(lines, ' '); 
+    string data_dir = todir(input); // distributed stored data
+    auto lines = paracel_load(data_dir);
+    local_parser(lines, ' ', true); // includes label
     data = vec_to_mat(samples).transpose();   
     samples.resize(0);
     lines.resize(0);
@@ -565,7 +565,8 @@ void autoencoder::train(int lyr){
       corrupt_data();
     }
   }
-  assert(data.rows() == layer_size[lyr]);  // QA
+  assert(data.rows() == layer_size[lyr] &&\
+      "Modify layers' size in .json file to adjust data's dimension");  // QA
   if (learning_method == "dbgd") {
     std::cout << "worker" << get_worker_id() << " chose distributed batch gradient descent" << std::endl;
     set_total_iters(rounds); // default value

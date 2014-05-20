@@ -1,4 +1,4 @@
-# coding: utf-8
+#! /usr/bin/env python
 
 import os
 import sys
@@ -12,8 +12,9 @@ from spec import process_mp3
 import random
 
 SIZE = 30
-SET = 'train'
-DST_PATH = '/mfs/user/zhaojunbo/paracel/alg/ae/songs/dataset/data_spec_' + 'test'
+DIM = 513
+SET = 'test'
+DST_PATH = '/mfs/user/zhaojunbo/paracel/alg/ae/songs/dataset/data_spec_' + SET
 
 
 def map_list_to_str(dat):
@@ -39,7 +40,8 @@ def map_song_with_label_te(data):
         new_mat = np.log(new_mat + 1)
         new_mat = normalize(new_mat)
         new_mat_ln = reduce(lambda x, y : list(x) + list(y), list(new_mat))
-        return (label, new_mat_ln)
+        assert len(new_mat_ln) == DIM * SIZE # QA
+        return label, new_mat_ln
     except:
         import traceback
         traceback.print_exc()
@@ -59,6 +61,7 @@ def map_song_with_label_tr(data):
         new_mat = np.log(new_mat + 1)
         new_mat = normalize(new_mat)
         str_mat = map_list_to_str(new_mat)
+        assert len(str_mat.split()) == DIM * SIZE  # QA
         str_mat += str(label) # with label
         return str_mat
     except:
@@ -79,6 +82,7 @@ def map_song_tr(data):
         new_mat = np.log(new_mat + 1)
         new_mat = normalize(new_mat)
         str_mat = map_list_to_str(new_mat)
+        assert len(str_mat.split()) == DIM * SIZE  # QA
         return str_mat
     except:
         import traceback
@@ -127,16 +131,20 @@ def main():
                         sids_with_label, 100
                     ).map(
                         map_song_with_label_tr
+                    ).filter(
+                    lambda x: x != None
                     ).saveAsTextFile(
                         DST_PATH
                     )
         elif SET is 'test':
             # for python script of test, provide beansdb
-            sids_with_label = get_song_ids_with_label_test(20000)
+            sids_with_label = get_song_ids_with_label_test(40000)
             dpark_ctx.makeRDD(
-                        sids_with_label, 100
+                        sids_with_label, 50
                     ).map(
                         map_song_with_label_te
+                    ).filter(
+                    lambda x: x != None
                     ).saveAsBeansdb(
                         DST_PATH
                     )
@@ -144,7 +152,6 @@ def main():
             print 'Not supported this data set'
             sys.exit(-1)
 
-        
         print 'spec extracting done'
 
 

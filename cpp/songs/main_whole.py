@@ -13,8 +13,8 @@ import random
 
 SIZE = 30
 DIM = 513
-SET = 'test'
-DST_PATH = '/mfs/user/zhaojunbo/paracel/alg/ae/songs/dataset/data_spec_' + SET
+SET = 'train'
+DST_PATH = '/mfs/user/zhaojunbo/paracel/alg/ae/songs/dataset/whole/data_spec_' + SET
 
 
 def map_list_to_str(dat):
@@ -36,9 +36,6 @@ def map_song_with_label_te(data):
         random.shuffle(wd_ids)
         wd_ids = wd_ids[:SIZE]
         new_mat = [new_mat[i] for i in wd_ids]
-        new_mat = np.array(new_mat)
-        new_mat = np.log(new_mat + 1)
-        new_mat = normalize(new_mat)
         new_mat_ln = reduce(lambda x, y : list(x) + list(y), list(new_mat))
         assert len(new_mat_ln) == DIM * SIZE # QA
         return label, new_mat_ln
@@ -57,9 +54,6 @@ def map_song_with_label_tr(data):
         random.shuffle(wd_ids)
         wd_ids = wd_ids[:SIZE]
         new_mat = [new_mat[i] for i in wd_ids]
-        new_mat = np.array(new_mat)
-        new_mat = np.log(new_mat + 1)
-        new_mat = normalize(new_mat)
         str_mat = map_list_to_str(new_mat)
         assert len(str_mat.split()) == DIM * SIZE  # QA
         str_mat += str(label) # with label
@@ -78,9 +72,6 @@ def map_song_tr(data):
         random.shuffle(wd_ids)
         wd_ids = wd_ids[:SIZE]
         new_mat = [new_mat[i] for i in wd_ids]
-        new_mat = np.array(new_mat)
-        new_mat = np.log(new_mat + 1)
-        new_mat = normalize(new_mat)
         str_mat = map_list_to_str(new_mat)
         assert len(str_mat.split()) == DIM * SIZE  # QA
         return str_mat

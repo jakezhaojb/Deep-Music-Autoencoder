@@ -14,7 +14,7 @@ import random
 SIZE = 30
 DIM = 513
 SET = 'test'
-DST_PATH = '/mfs/user/zhaojunbo/paracel/alg/ae/songs/dataset/data_spec_' + SET
+DST_PATH = '/mfs/user/zhaojunbo/paracel/alg/ae/songs/dataset/patch/data_spec_' + SET
 
 
 def map_list_to_str(dat):
@@ -22,6 +22,7 @@ def map_list_to_str(dat):
     str_dat = ''
     for d_elem in dat:
         tmp =  map(lambda x : str(x) + ' ', d_elem)
+        tmp += '\n'
         str_dat += reduce(lambda x, y: x + y, tmp)
     return str_dat
 
@@ -36,12 +37,9 @@ def map_song_with_label_te(data):
         random.shuffle(wd_ids)
         wd_ids = wd_ids[:SIZE]
         new_mat = [new_mat[i] for i in wd_ids]
-        new_mat = np.array(new_mat)
-        new_mat = np.log(new_mat + 1)
-        new_mat = normalize(new_mat)
-        new_mat_ln = reduce(lambda x, y : list(x) + list(y), list(new_mat))
-        assert len(new_mat_ln) == DIM * SIZE # QA
-        return label, new_mat_ln
+        assert all(len(mat_elem) == DIM for mat_elem in new_mat)
+        assert len(new_mat) == SIZE
+        return label, new_mat
     except:
         import traceback
         traceback.print_exc()
@@ -57,12 +55,10 @@ def map_song_with_label_tr(data):
         random.shuffle(wd_ids)
         wd_ids = wd_ids[:SIZE]
         new_mat = [new_mat[i] for i in wd_ids]
-        new_mat = np.array(new_mat)
-        new_mat = np.log(new_mat + 1)
-        new_mat = normalize(new_mat)
+        assert all(len(mat_elem) == DIM for mat_elem in new_mat)
+        assert len(new_mat) == SIZE
+        map(lambda x: x.append(label), new_mat)
         str_mat = map_list_to_str(new_mat)
-        assert len(str_mat.split()) == DIM * SIZE  # QA
-        str_mat += str(label) # with label
         return str_mat
     except:
         import traceback
@@ -78,11 +74,9 @@ def map_song_tr(data):
         random.shuffle(wd_ids)
         wd_ids = wd_ids[:SIZE]
         new_mat = [new_mat[i] for i in wd_ids]
-        new_mat = np.array(new_mat)
-        new_mat = np.log(new_mat + 1)
-        new_mat = normalize(new_mat)
+        assert all(len(mat_elem) == DIM for mat_elem in new_mat)
+        assert len(new_mat) == SIZE
         str_mat = map_list_to_str(new_mat)
-        assert len(str_mat.split()) == DIM * SIZE  # QA
         return str_mat
     except:
         import traceback
@@ -90,7 +84,7 @@ def map_song_tr(data):
 
 
 def normalize(data):
-    norm_data = data - np.mean(data, axis=0)
+    norm_data = data - np.mean(data, axis=1).reshape(data.shape[0], 1)
     # Truncate to +/-3 standard deviations and scale to -1 to 1
     dstd = 3 * np.std(norm_data)
     norm_data = np.maximum(np.minimum(norm_data, dstd), -dstd) / dstd

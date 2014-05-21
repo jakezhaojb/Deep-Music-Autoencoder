@@ -2,12 +2,14 @@
 import os
 import sys
 sys.path.append('/mfs/user/zhaojunbo/paracel/alg/ae/songs')
-from main import SIZE, DIM
+from main_patch import SIZE, DIM
 import time
 import dpark
 
-SET = 'test'
-DATA_PATH = '/mfs/user/zhaojunbo/paracel/alg/ae/songs/dataset/data_spec_' + SET
+SET = 'train'
+DATA_PATH = os.path.abspath(os.path.join(
+    os.path.dirname(os.path.abspath(__file__)),
+    'data_spec_' + SET))
 
     
 def tr_data_len(fn):
@@ -15,7 +17,7 @@ def tr_data_len(fn):
     with open(fn) as fin:
         for i, l in enumerate(fin):
             try:
-                assert len(l.split()) == DIM * SIZE + 1, 'Data dimension not accorded'
+                assert len(l.split()) == DIM + 1, 'Data dimension not accorded'
             except:
                 print 'error: %s, @line %i, Dim: %i' % (fn, i, len(l.split()))
                 pass
@@ -69,8 +71,10 @@ def main():
                     lambda (key, (val, _, __)):  val
                 )#.sample(1/100.)
         data = vec_rdd.collect()
-        assert all(len(dat) == DIM * SIZE for dat in data), \
-                'error of data dimension.'
+        import pdb; pdb.set_trace()
+        for dat in data:
+            assert len(dat) == SIZE
+            assert all(len(da) == DIM for da in dat)
         print "Total number: %i" % len(data)
     
 

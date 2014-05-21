@@ -455,7 +455,7 @@ void autoencoder::downpour_sgd(int lyr){
 
 
 // mini-batch downpour sgd
-void autoencoder::downpour_sgd_mibt(int lyr){
+void autoencoder::downpour_sgd_mibt(int lyr){  // TODO Adagrad
   // flag
   std::cout << "worker" << get_worker_id() << ", cost: " << ae_cost(lyr) << std::endl;
   int mibt_cnt = 0;
@@ -467,6 +467,7 @@ void autoencoder::downpour_sgd_mibt(int lyr){
   _paracel_write("b1", WgtBias[lyr].at("b1"));
   _paracel_write("b2", WgtBias[lyr].at("b2"));
   vector<int> idx;
+std::cout << get_worker_id() << " ok1" << std::endl;
   for (int i = 0; i < data.cols(); i++) {
     idx.push_back(i);
   }
@@ -478,6 +479,7 @@ void autoencoder::downpour_sgd_mibt(int lyr){
   delta["W2"] = MatrixXd::Zero(WgtBias[lyr].at("W2").rows(), WgtBias[lyr].at("W2").cols());
   delta["b1"] = VectorXd::Zero(WgtBias[lyr].at("b1").size());
   delta["b2"] = VectorXd::Zero(WgtBias[lyr].at("b2").size());
+std::cout << get_worker_id() << " ok2" << std::endl;
 
   for (int rd = 0; rd < rounds; rd++) {
     std::random_shuffle(idx.begin(), idx.end());
@@ -504,6 +506,7 @@ void autoencoder::downpour_sgd_mibt(int lyr){
     WgtBias[lyr].at("b1") = _paracel_read("b1");
     WgtBias[lyr].at("b2") = _paracel_read("b2");
     unordered_map<string, MatrixXd> WgtBias_lyr_old(WgtBias[lyr]);
+std::cout << get_worker_id() << " ok3" << std::endl;
     
     // traverse data
     mibt_cnt = 0;
@@ -514,6 +517,7 @@ void autoencoder::downpour_sgd_mibt(int lyr){
         WgtBias[lyr].at("b1") = _paracel_read("b1");
         WgtBias[lyr].at("b2") = _paracel_read("b2");
         WgtBias_lyr_old = WgtBias[lyr];
+std::cout << get_worker_id() << " ok4" << std::endl;
       }
       unordered_map<string, MatrixXd> WgtBias_grad = ae_mibt_stoc_grad(lyr, mibt_sample_id);
       WgtBias[lyr].at("W1") -= (alpha * WgtBias_grad["W1"].array()).matrix();
@@ -534,11 +538,13 @@ void autoencoder::downpour_sgd_mibt(int lyr){
         _paracel_bupdate("b1", delta.at("b1"));
         _paracel_bupdate("b2", delta.at("b2"));
         iter_commit();
+std::cout << get_worker_id() << " ok5" << std::endl;
         // flag
         std::cout << "worker" << get_worker_id() << ", cost: " << ae_cost(lyr) << std::endl;
       }
       mibt_cnt += 1;
     }  // traverse
+std::cout << get_worker_id() << " ok6" << std::endl;
     sync();
     std::cout << "worker" << get_worker_id() << "at the end of rd" << rd << std::endl;
   }  // rounds

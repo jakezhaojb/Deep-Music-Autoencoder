@@ -67,9 +67,9 @@ def main():
                 DATA_PATH
                 ).map(
                     lambda (key, (val, _, __)):  val
-                )
+                )#.sample(1/100.)
         data = vec_rdd.collect()
-        assert all(len(dat[1]) == DIM * SIZE for dat in data), \
+        assert all(len(dat) == DIM * SIZE for dat in data), \
                 'error of data dimension.'
         print "Total number: %i" % len(data)
     

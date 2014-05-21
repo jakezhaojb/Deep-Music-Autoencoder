@@ -1,4 +1,5 @@
-cpp/songs/song_ids_with_genre_ids.npy
 *.pyc
 *.npy
 *.pkl
+cpp/songs/dataset/data_spec_train
+cpp/songs/dataset/data_spec_test

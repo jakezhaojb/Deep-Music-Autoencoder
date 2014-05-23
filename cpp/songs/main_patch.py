@@ -13,7 +13,7 @@ import random
 
 SIZE = 30
 DIM = 513
-SET = 'test'
+SET = 'train'
 DST_PATH = '/mfs/user/zhaojunbo/paracel/alg/ae/songs/dataset/patch/data_spec_' + SET
 
 
@@ -39,6 +39,10 @@ def map_song_with_label_te(data):
         new_mat = [new_mat[i] for i in wd_ids]
         assert all(len(mat_elem) == DIM for mat_elem in new_mat)
         assert len(new_mat) == SIZE
+        _new_mat = np.array(new_mat)
+        _new_mat = np.log(_new_mat + 1)
+        _new_mat = normalize(_new_mat)
+        new_mat = map(lambda x: list(x), _new_mat)
         return label, new_mat
     except:
         import traceback
@@ -57,6 +61,10 @@ def map_song_with_label_tr(data):
         new_mat = [new_mat[i] for i in wd_ids]
         assert all(len(mat_elem) == DIM for mat_elem in new_mat)
         assert len(new_mat) == SIZE
+        _new_mat = np.array(new_mat)
+        _new_mat = np.log(_new_mat + 1)
+        _new_mat = normalize(_new_mat)
+        new_mat = map(lambda x: list(x), _new_mat)
         map(lambda x: x.append(label), new_mat)
         str_mat = map_list_to_str(new_mat)
         return str_mat
@@ -76,6 +84,10 @@ def map_song_tr(data):
         new_mat = [new_mat[i] for i in wd_ids]
         assert all(len(mat_elem) == DIM for mat_elem in new_mat)
         assert len(new_mat) == SIZE
+        _new_mat = np.array(new_mat)
+        _new_mat = np.log(_new_mat + 1)
+        _new_mat = normalize(_new_mat)
+        new_mat = map(lambda x: list(x), _new_mat)
         str_mat = map_list_to_str(new_mat)
         return str_mat
     except:

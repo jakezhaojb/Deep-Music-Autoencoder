@@ -591,7 +591,7 @@ void autoencoder::train(int lyr){
     return;
   }
   // data for next layer
-  data = (WgtBias[lyr].at("W1") * data).colwise() + MatrixXd::ColXpr(WgtBias[lyr].at("b1").col(0));
+  data = acti_func((WgtBias[lyr].at("W1") * data).colwise() + MatrixXd::ColXpr(WgtBias[lyr].at("b1").col(0)));
   // Discard IO operations
   /*
   if (get_worker_id() == 0) {  // delete the previous data file, since it is stored by ios::app

@@ -1,5 +1,7 @@
 *.pyc
 *.npy
 *.pkl
-cpp/songs/dataset/data_spec_train
-cpp/songs/dataset/data_spec_test
+cpp/songs/dataset/patch/data_spec_train
+cpp/songs/dataset/patch/data_spec_test
+cpp/songs/dataset/whole/data_spec_train
+cpp/songs/dataset/whole/data_spec_test

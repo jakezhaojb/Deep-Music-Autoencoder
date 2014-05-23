@@ -36,6 +36,10 @@ def map_song_with_label_te(data):
         random.shuffle(wd_ids)
         wd_ids = wd_ids[:SIZE]
         new_mat = [new_mat[i] for i in wd_ids]
+        _new_mat = np.array(new_mat)
+        _new_mat = np.log(_new_mat + 1)
+        _new_mat = normalize(_new_mat)
+        new_mat = map(lambda x: list(x), _new_mat)
         new_mat_ln = reduce(lambda x, y : list(x) + list(y), list(new_mat))
         assert len(new_mat_ln) == DIM * SIZE # QA
         return label, new_mat_ln
@@ -54,6 +58,10 @@ def map_song_with_label_tr(data):
         random.shuffle(wd_ids)
         wd_ids = wd_ids[:SIZE]
         new_mat = [new_mat[i] for i in wd_ids]
+        _new_mat = np.array(new_mat)
+        _new_mat = np.log(_new_mat + 1)
+        _new_mat = normalize(_new_mat)
+        new_mat = map(lambda x: list(x), _new_mat)
         str_mat = map_list_to_str(new_mat)
         assert len(str_mat.split()) == DIM * SIZE  # QA
         str_mat += str(label) # with label
@@ -72,6 +80,10 @@ def map_song_tr(data):
         random.shuffle(wd_ids)
         wd_ids = wd_ids[:SIZE]
         new_mat = [new_mat[i] for i in wd_ids]
+        _new_mat = np.array(new_mat)
+        _new_mat = np.log(_new_mat + 1)
+        _new_mat = normalize(_new_mat)
+        new_mat = map(lambda x: list(x), _new_mat)
         str_mat = map_list_to_str(new_mat)
         assert len(str_mat.split()) == DIM * SIZE  # QA
         return str_mat

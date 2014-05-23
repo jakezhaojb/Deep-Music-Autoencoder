@@ -65,17 +65,18 @@ def main():
 
     if SET is 'test':
         print 'for testing data:'
-        vec_rdd = dpark_ctx.beansdb(
+        n_data = dpark_ctx.accumulator(0)
+        def exam_each(data):
+            assert len(data) == SIZE and all(len(dat) == DIM for dat in data)
+            n_data.add(1)
+        bool_rdd = dpark_ctx.beansdb(
                 DATA_PATH
                 ).map(
                     lambda (key, (val, _, __)):  val
-                )#.sample(1/100.)
-        data = vec_rdd.collect()
-        import pdb; pdb.set_trace()
-        for dat in data:
-            assert len(dat) == SIZE
-            assert all(len(da) == DIM for da in dat)
-        print "Total number: %i" % len(data)
+                ).foreach(
+                    exam_each
+                )
+        print "Total number: %i" % n_data.value
     
 
 if __name__ == '__main__':

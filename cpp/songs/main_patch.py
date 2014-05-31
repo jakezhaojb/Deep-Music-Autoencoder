@@ -13,7 +13,7 @@ import random
 
 SIZE = 30
 DIM = 513
-SET = 'train'
+SET = 'test'
 DST_PATH = '/mfs/user/zhaojunbo/paracel/alg/ae/songs/dataset/patch/data_spec_' + SET
 
 
@@ -42,7 +42,7 @@ def map_song_with_label_te(data):
         _new_mat = np.array(new_mat)
         _new_mat = np.log(_new_mat + 1)
         _new_mat = normalize(_new_mat)
-        new_mat = map(lambda x: list(x), _new_mat)
+        new_mat = _new_mat.tolist() # IMPORTANT. beansdb can't save numpy.float64
         return label, new_mat
     except:
         import traceback

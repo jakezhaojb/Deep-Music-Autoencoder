@@ -9,6 +9,7 @@ from main_patch import SIZE, DIM
 import numpy as np
 import dpark
 import svmutil as svm
+import pickle
 
 BASE_PATH = '/mfs/user/zhaojunbo/paracel/alg/ae/songs/dataset/patch'
 TRAIN_DATA_PATH = os.path.join(BASE_PATH, 'data_spec_train')
@@ -38,7 +39,7 @@ def load_text_file(filename):
 
 
 def main():
-    dpark_ctx = dpark.DparkContext()
+    dpark_ctx = dpark.DparkContext('mesos')
     assert os.path.isdir(BASE_PATH) and os.path.isdir(MODEL_PATH)
     
     # Read the weights and bias of SDAE from MODEL_PATH
@@ -59,7 +60,6 @@ def main():
     lyr = W.keys()
     lyr.sort()
     lyr = lyr[:FEA_LAYER]
-    """
     # SVM training data
     svm_data_tr = []
     svm_label_tr = []
@@ -91,37 +91,35 @@ def main():
         svm_label_tr.append(map_label(tmp_label[0])) 
         if i % 1000 == 0:
             print 'Finish aggregate %i patch' % i
-    """
     # SVM testing data
     svm_label_te = []
     svm_data_te = []
-    # TODO, Testing data seems chaos!
     def map_once_te(data):
         key = map_label(int(data[0]))
         val = np.array(data[1][0]).T
-        import pdb; pdb.set_trace()
         assert val.shape == (DIM, SIZE)
         for lyr_elem in lyr:
             val = sigmoid(np.dot(W.get(lyr_elem), val) + b.get(lyr_elem))
         val = reduce(lambda x, y: np.append(x, y), val) # TODO order
-        val = [list(val.reshape(val.size,))] # TODO Code is a little too complicated
+        val = val.reshape(val.size,).tolist() # TODO Code is a little too complicated
         return key, val
     vec_rdd = dpark_ctx.beansdb(
             TEST_DATA_PATH
             ).map(
                 map_once_te
-            ).reduceByKey(
-                lambda x, y: x + y
             )
     data = vec_rdd.collect()
     for data_elem in data:
-        svm_data_te.extend(data_elem[1])
-        svm_label_te.extend(data_elem[0] * len(data_elem))
-    import pdb; pdb.set_trace()
+        svm_data_te.append(data_elem[1])
+        svm_label_te.append(data_elem[0])
     # SVM running
     print 'SVM model starts training.'
     svm_model = svm.svm_train(svm_label_tr, svm_data_tr)
-    print 'SVM model training done'
+    # saved SVM model
+    fl_svm = open("svm_model.pkl", "wb")
+    pickle.dump(svm_model, fl_svm)
+    fl_svm.close()
+    print 'SVM model training done and saved'
     p_label, p_acc, p_val = svm.svm_predict(svm_label_te, svm_data_te, svm_model)
 
 if __name__ == '__main__':

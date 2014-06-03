@@ -16,6 +16,7 @@ TRAIN_DATA_PATH = os.path.join(BASE_PATH, 'data_spec_train')
 TEST_DATA_PATH = os.path.join(BASE_PATH, 'data_spec_test')
 MODEL_PATH = os.path.join(BASE_PATH, 'output_sdae')
 FEA_LAYER = -1
+SAVE_OR_LOAD = True
 
 
 def sigmoid(x):
@@ -114,11 +115,14 @@ def main():
         svm_label_te.append(data_elem[0])
     # SVM running
     print 'SVM model starts training.'
-    svm_model = svm.svm_train(svm_label_tr, svm_data_tr)
-    # saved SVM model
-    fl_svm = open("svm_model.pkl", "wb")
-    pickle.dump(svm_model, fl_svm)
-    fl_svm.close()
+    svm_model = svm.svm_train(svm_label_tr, svm_data_tr, '-c 1')
+    if SAVE_OR_LOAD: # True
+        # saved SVM model
+        fn_svm = 'svm_model_c1'
+        svm.svm_save_model(fn_svm, svm_model)
+    else: # False
+        # load SVM model
+        svm_model = svm.svm_load_model(fn_svm)
     print 'SVM model training done and saved'
     p_label, p_acc, p_val = svm.svm_predict(svm_label_te, svm_data_te, svm_model)
 

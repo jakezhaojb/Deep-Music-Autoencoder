@@ -89,7 +89,7 @@ def main():
         tmp_data = np.array([_data_agg_elem[1] for _data_agg_elem in data_agg_elem])
         # TODO tmp_data.shape = (30, 30, 1), why?
         svm_data_tr.append(list(tmp_data.reshape(tmp_data.size,)))
-        svm_label_tr.append(map_label(tmp_label[0])) 
+        svm_label_tr.append(int(map_label(tmp_label[0])))
         if i % 1000 == 0:
             print 'Finish aggregate %i patch' % i
     # SVM testing data
@@ -112,19 +112,56 @@ def main():
     data = vec_rdd.collect()
     for data_elem in data:
         svm_data_te.append(data_elem[1])
-        svm_label_te.append(data_elem[0])
+        svm_label_te.append(int(data_elem[0]))
+
+    # Process data, view the GID distribution in tr or te sets
+    GID_adj = range(len(GID))
+    print 'Processing data here.'
+    tr_hist = []
+    tr_hist.extend([0] * len(GID_adj))
+    for svm_label_tr_elem in svm_label_tr:
+        try:
+            tr_hist[GID_adj.index(svm_label_tr_elem)] += 1
+        except:
+            import traceback
+            traceback.print_exc()
+    te_hist = []
+    te_hist.extend([0] * len(GID_adj))
+    for svm_label_te_elem in svm_label_te:
+        try:
+            te_hist[GID_adj.index(svm_label_te_elem)] += 1
+        except:
+            import traceback
+            traceback.print_exc()
+    print '=' * 100
+    print 'training data distribution:'
+    for gid_elem, tr_hist_elem in zip(GID_adj, tr_hist):
+        print '%i: %i' % (gid_elem, tr_hist_elem)
+    print '=' * 100
+    print 'testing data distribution:'
+    for gid_elem, te_hist_elem in zip(GID_adj, te_hist):
+        print '%i: %i' % (gid_elem, te_hist_elem)
+
     # SVM running
-    print 'SVM model starts training.'
-    svm_model = svm.svm_train(svm_label_tr, svm_data_tr, '-c 1')
+    fn_svm = 'svm_model_c0_01_wgt'
     if SAVE_OR_LOAD: # True
-        # saved SVM model
-        fn_svm = 'svm_model_c1'
+        print 'SVM model starts training.'
+        svm_opt = '-c 0.01 '
+        for gid_elem, tr_hist_elem in zip(GID_adj, tr_hist):
+            svm_opt += ('-w' + str(gid_elem) + ' ' + str(max(tr_hist) / float(tr_hist_elem)) + ' ')
+        print svm_opt
+        svm_model = svm.svm_train(svm_label_tr, svm_data_tr, svm_opt)
+        # save SVM model
         svm.svm_save_model(fn_svm, svm_model)
     else: # False
+        print 'SVM model loading.'
         # load SVM model
         svm_model = svm.svm_load_model(fn_svm)
-    print 'SVM model training done and saved'
+    print 'SVM model training or loading done'
     p_label, p_acc, p_val = svm.svm_predict(svm_label_te, svm_data_te, svm_model)
+    fid = open('res_tmp.pkl', 'wb')
+    pickle.dump((p_label, p_acc, p_val), fid)
+    fid.close()
 
 if __name__ == '__main__':
     main()

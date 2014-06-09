@@ -17,6 +17,7 @@ TEST_DATA_PATH = os.path.join(BASE_PATH, 'data_spec_test')
 MODEL_PATH = os.path.join(BASE_PATH, 'output_sdae')
 FEA_LAYER = -1
 SAVE_OR_LOAD = True
+CROSS_VALIDATION = True
 
 
 def sigmoid(x):
@@ -39,12 +40,27 @@ def load_text_file(filename):
     return np.array(res)
 
 
+def data_dist(labels):
+    GID_adj = range(len(GID))
+    lbl_hist = []
+    lbl_hist.extend([0] * len(GID_adj))
+    for label_elem in labels:
+        try:
+            lbl_hist[GID_adj.index(label_elem)] += 1
+        except:
+            import traceback
+            traceback.print_exc()
+    for gid_elem, lbl_hist_elem in zip(GID_adj, lbl_hist):
+        print '%i: %i' % (gid_elem, lbl_hist_elem)
+
+
 def main():
     dpark_ctx = dpark.DparkContext('mesos')
     assert os.path.isdir(BASE_PATH) and os.path.isdir(MODEL_PATH)
     
     # Read the weights and bias of SDAE from MODEL_PATH
-    print 'loading the model'
+    print 'Loading the model'
+    print 'Will adopt layer No. %i' % FEA_LAYER
     W = dict()
     b = dict()
     n_lyr = len(os.listdir(MODEL_PATH)) / 4 # number of layers
@@ -60,10 +76,13 @@ def main():
     # SVM
     lyr = W.keys()
     lyr.sort()
+    # TODO Involve the layer aiming at.
+    lyr_last = lyr[FEA_LAYER]
     lyr = lyr[:FEA_LAYER]
+    lyr.append(lyr_last)
     # SVM training data
-    svm_data_tr = []
-    svm_label_tr = []
+    svm_data_tr_va = []
+    svm_label_tr_va = []
     def map_once_tr(str_data):
         _str_data = str_data.split()
         key = float(_str_data[-1])
@@ -81,17 +100,21 @@ def main():
     data = vec_rdd.collect()
     data_agg = [data[x: x+SIZE] for x in xrange(0, len(data), SIZE)]
     assert data_agg[-1][-1] == data[-1] # QA
-    print 'SVM training data starts aggregation.'
+    print 'Data aggregates now.'
     for i, data_agg_elem in enumerate(data_agg):
         assert len(data_agg_elem) == SIZE
         tmp_label = [_data_agg_elem[0] for _data_agg_elem in data_agg_elem]
         assert all(_tmp_label == tmp_label[0] for _tmp_label in tmp_label)
         tmp_data = np.array([_data_agg_elem[1] for _data_agg_elem in data_agg_elem])
         # TODO tmp_data.shape = (30, 30, 1), why?
-        svm_data_tr.append(list(tmp_data.reshape(tmp_data.size,)))
-        svm_label_tr.append(int(map_label(tmp_label[0])))
+        svm_data_tr_va.append(list(tmp_data.reshape(tmp_data.size,)))
+        svm_label_tr_va.append(int(map_label(tmp_label[0])))
         if i % 1000 == 0:
             print 'Finish aggregate %i patch' % i
+        svm_data_tr = svm_data_tr_va[10000:]
+        svm_label_tr = svm_label_tr_va[10000:]
+        svm_data_va = svm_data_tr_va[:10000]
+        svm_label_va = svm_label_tr_va[:10000]
     # SVM testing data
     svm_label_te = []
     svm_data_te = []
@@ -115,38 +138,52 @@ def main():
         svm_label_te.append(int(data_elem[0]))
 
     # Process data, view the GID distribution in tr or te sets
-    GID_adj = range(len(GID))
     print 'Processing data here.'
-    tr_hist = []
-    tr_hist.extend([0] * len(GID_adj))
-    for svm_label_tr_elem in svm_label_tr:
-        try:
-            tr_hist[GID_adj.index(svm_label_tr_elem)] += 1
-        except:
-            import traceback
-            traceback.print_exc()
-    te_hist = []
-    te_hist.extend([0] * len(GID_adj))
-    for svm_label_te_elem in svm_label_te:
-        try:
-            te_hist[GID_adj.index(svm_label_te_elem)] += 1
-        except:
-            import traceback
-            traceback.print_exc()
     print '=' * 100
-    print 'training data distribution:'
-    for gid_elem, tr_hist_elem in zip(GID_adj, tr_hist):
-        print '%i: %i' % (gid_elem, tr_hist_elem)
+    print 'Training data distributions:'
+    data_dist(svm_label_tr)
     print '=' * 100
-    print 'testing data distribution:'
-    for gid_elem, te_hist_elem in zip(GID_adj, te_hist):
-        print '%i: %i' % (gid_elem, te_hist_elem)
+    print 'Testing data distributions:'
+    data_dist(svm_label_te)
+    print '=' * 100
+    print 'Validation data distributions:'
+    data_dist(svm_label_va)
+    # Cross Validation
+    if CROSS_VALIDATION:
+        print 'SVM model starts cross validating.'
+        del svm_data_tr, svm_data_te, svm_data_tr_va, \
+                svm_label_tr, svm_label_te, svm_label_tr_va
+        for svm_c in [0.001, 0.01, 0.1, 1, 10, 100, 1000, 10000]:
+            svm_opt = '-c ' + str(svm_c) + ' '
+            for gid_elem, va_hist_elem in zip(GID_adj, va_hist):
+                wgt_tmp = max(va_hist) / float(va_hist_elem)
+                '''
+                if wgt_tmp < 3.0:
+                    wgt = 1
+                elif wgt_tmp < 10:
+                    wgt = 4
+                elif wgt_tmp < 40:
+                    wgt = 16
+                else:
+                    wgt = 32
+                '''
+                if wgt_tmp < 10.0:
+                    wgt = int(wgt_tmp)
+                elif wgt_tmp < 40:
+                    wgt = 16
+                else:
+                    wgt = 32
+                svm_opt += ('-w' + str(gid_elem) + ' ' + str(wgt) + ' ')
+            svm_opt += '-v 5 -q'
+            print svm_opt
+            svm_model = svm.svm_train(svm_label_va, svm_data_va, svm_opt)
+        sys.exit(1)
 
     # SVM running
-    fn_svm = 'svm_model_c1_wgt'
+    fn_svm = 'svm_model_c0_01_wgt'
     if SAVE_OR_LOAD: # True
         print 'SVM model starts training.'
-        svm_opt = '-c 1 '
+        svm_opt = '-c 0.01 '
         for gid_elem, tr_hist_elem in zip(GID_adj, tr_hist):
             wgt_tmp = max(tr_hist) / float(tr_hist_elem)
             if wgt_tmp < 3.0:

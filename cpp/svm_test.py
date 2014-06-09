@@ -143,12 +143,21 @@ def main():
         print '%i: %i' % (gid_elem, te_hist_elem)
 
     # SVM running
-    fn_svm = 'svm_model_c0_01_wgt'
+    fn_svm = 'svm_model_c1_wgt'
     if SAVE_OR_LOAD: # True
         print 'SVM model starts training.'
-        svm_opt = '-c 0.01 '
+        svm_opt = '-c 1 '
         for gid_elem, tr_hist_elem in zip(GID_adj, tr_hist):
-            svm_opt += ('-w' + str(gid_elem) + ' ' + str(max(tr_hist) / float(tr_hist_elem)) + ' ')
+            wgt_tmp = max(tr_hist) / float(tr_hist_elem)
+            if wgt_tmp < 3.0:
+                wgt = 1
+            elif wgt_tmp < 10:
+                wgt = 2
+            elif wgt_tmp < 40:
+                wgt = 4
+            else:
+                wgt = 8
+            svm_opt += ('-w' + str(gid_elem) + ' ' + str(wgt) + ' ')
         print svm_opt
         svm_model = svm.svm_train(svm_label_tr, svm_data_tr, svm_opt)
         # save SVM model

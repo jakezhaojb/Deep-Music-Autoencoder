@@ -188,8 +188,8 @@ def main():
                 svm_data_va_bin.append(data_elem)
         print 'Binary class data was prepared.'
         for svm_c in [0.001, 0.01, 0.1, 1, 10, 100, 1000, 10000]:
-            svm_opt = '-c ' + str(svm_c) + ' -v 5'
-            svm_model = svm.svm_train(svm_label_va, svm_data_va, svm_opt)
+            svm_opt = '-c ' + str(svm_c) + ' -v 5 -q'
+            svm_model = svm.svm_train(svm_label_va_bin, svm_data_va_bin, svm_opt)
 
     # Cross Validation on whole validation set
     elif CROSS_VALIDATION:

@@ -23,7 +23,7 @@ namespace paracel{
 class autoencoder: public paracel::paralg{
 
  public:
-  autoencoder(paracel::Comm, string, string, string, vector<int>, int, string = "sgd", string = "sigmoid", int = 1, double = 0.01, bool = false, int = 0, bool = false, double = 0.001, double = 0.0001, double = 3., int = 1, int = 0, int = 0, bool = false, double = 0.30, double = 0.1); // TO BE COMPLETED
+  autoencoder(paracel::Comm, string, string, string, vector<int>, int, string = "sgd", string = "sigmoid", int = 1, double = 0.01, bool = false, int = 0, bool = false, double = 0.001, double = 0.0001, double = 3., int = 1, int = 0, int = 0, bool = false, double = 0.30, double = 0.1, bool = false); // TO BE COMPLETED
   virtual ~autoencoder();
 
   void downpour_sgd(int); // downpour stochastic gradient descent
@@ -95,6 +95,8 @@ class autoencoder: public paracel::paralg{
   bool corrupt;
   double dvt;  // deviation of Gaussion noise
   double foc;  // fraction of corrupted neurons 
+  // Fine-tunning
+  bool fine_tuning;
 
 }; // class
 

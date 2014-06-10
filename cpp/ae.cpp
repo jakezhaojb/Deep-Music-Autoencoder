@@ -15,7 +15,7 @@ autoencoder::autoencoder(paracel::Comm comm, string hosts_dct_str,
           int _rounds, double _alpha, bool _debug, int limit_s, 
           bool ssp_switch, double _lamb, double _sparsity_param, 
           double _beta, int _mibt_size, int _read_batch, int _update_batch, 
-          bool _corrupt, double _dvt, double _foc) :
+          bool _corrupt, double _dvt, double _foc, bool _fine_tuning) :
   paracel::paralg(hosts_dct_str, comm, _output, _rounds, limit_s, ssp_switch),
   input(_input),
   output(_output),
@@ -35,7 +35,8 @@ autoencoder::autoencoder(paracel::Comm comm, string hosts_dct_str,
   visible_size(_visible_size),
   corrupt(_corrupt),
   dvt(_dvt),
-  foc(_foc){
+  foc(_foc),
+  fine_tuning(_fine_tuning){
     //hidden_size.assign(_hidden_size.begin(), _hidden_size.end());
     n_lyr = hidden_size.size();  // number of hidden layers
     layer_size.assign(hidden_size.begin(), hidden_size.end());
@@ -616,6 +617,8 @@ void autoencoder::train(){
     }
   }
   sync();
+  std::cout << "Training done" << std::endli << "Start fine-tuning" << std::endl;
+  // TODO, use the labels to drive the networks, add a softmax framework.
   std::cout << "Mission complete" << std::endl;
 }
 

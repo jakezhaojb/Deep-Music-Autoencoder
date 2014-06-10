@@ -17,4 +17,5 @@
   "corrupt" : true,
   "deviation" : 0.25,
   "frac_of_corrupt" : 0.50
+  "fine_tuning" : true
 }

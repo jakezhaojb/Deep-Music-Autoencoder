@@ -112,7 +112,7 @@ def load_svm_te_data(te_path, dpark_ctx, para):
         assert val.shape == (DIM, SIZE)
         for lyr_elem in lyr:
             val = sigmoid(np.dot(W.get(lyr_elem), val) + b.get(lyr_elem))
-        val = reduce(lambda x, y: np.append(x, y), val) # TODO order
+        val = reduce(lambda x, y: np.append(x, y), val)
         val = val.reshape(val.size,).tolist()
         return key, val
     vec_rdd = dpark_ctx.beansdb(
@@ -183,12 +183,17 @@ def main():
         svm_data_va_bin = []
         svm_label_va_bin = []
         for lbl_elem, data_elem in zip(svm_label_va, svm_data_va):
-            if lbl_elem == lbl1 or lbl_elem == lbl2:
-                svm_label_va_bin.append(lbl_elem)
+            if lbl_elem == lbl1:
+                svm_label_va_bin.append(-1)
                 svm_data_va_bin.append(data_elem)
-        print 'Binary class data was prepared.'
-        for svm_c in [0.001, 0.01, 0.1, 1, 10, 100, 1000, 10000]:
-            svm_opt = '-c ' + str(svm_c) + ' -v 5 -q'
+            elif lbl_elem == lbl2:
+                svm_label_va_bin.append(1)
+                svm_data_va_bin.append(data_elem)
+            else:
+                pass
+        print 'Binary classes data was prepared.'
+        for svm_c in [0.001, 0.01, 0.1, 1, 10, 100, 1000, 10000, 100000, 1e6, 1e7, 1e8]:
+            svm_opt = '-c ' + str(svm_c) + ' -w-1 3 -w1 2 -v 5 -q'
             svm_model = svm.svm_train(svm_label_va_bin, svm_data_va_bin, svm_opt)
 
     # Cross Validation on whole validation set

@@ -63,6 +63,7 @@ int main(int argc, char *argv[])
   int read_batch = pt.get<int>("read_batch");
   int update_batch = pt.get<int>("update_batch");
   bool corrupt = pt.get<bool>("corrupt");
+  bool fine_tuning = pt.get<bool>("fine_tuning");
 
   // Processing the parsing
   vector<int> hidden_size = split(_hidden_size);
@@ -73,7 +74,7 @@ int main(int argc, char *argv[])
 
   {
     paracel::autoencoder ae_solver(comm, FLAGS_server_info, input, output, hidden_size, visible_size, learning_method, acti_func_type, rounds, alpha, false, limit_s,
-              true, lamb, sparsity_param, beta, mibt_size, read_batch, update_batch, corrupt, dvt, foc);
+              true, lamb, sparsity_param, beta, mibt_size, read_batch, update_batch, corrupt, dvt, foc, fine_tuning);
     ae_solver.train();
   }
 

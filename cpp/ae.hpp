@@ -95,8 +95,6 @@ class autoencoder: public paracel::paralg{
   bool corrupt;
   double dvt;  // deviation of Gaussion noise
   double foc;  // fraction of corrupted neurons 
-  // Fine-tunning
-  bool fine_tuning;
 
 }; // class
 

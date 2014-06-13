@@ -1,4 +1,4 @@
-#ifndef _A_E_HPP
+#ifndef _A_E_HPP_
 #define _A_E_HPP_
 
 #include <string>
@@ -15,15 +15,12 @@ using Eigen::MatrixXd;
 using Eigen::ArrayXXd;
 using Eigen::VectorXd;
 
-// global var
-VectorXd g_rho;  // for sparse penalty
-
 namespace paracel{
 
 class autoencoder: public paracel::paralg{
 
  public:
-  autoencoder(paracel::Comm, string, string, string, vector<int>, int, string = "sgd", string = "sigmoid", int = 1, double = 0.01, bool = false, int = 0, bool = false, double = 0.001, double = 0.0001, double = 3., int = 1, int = 0, int = 0, bool = false, double = 0.30, double = 0.1, bool = false); // TO BE COMPLETED
+  autoencoder(paracel::Comm, string, string, string, vector<int>, int, string = "sgd", string = "sigmoid", int = 1, double = 0.01, bool = false, int = 0, bool = false, double = 0.001, double = 0.0001, double = 3., int = 1, int = 0, int = 0, bool = false, double = 0.30, double = 0.1); // TO BE COMPLETED
   virtual ~autoencoder();
 
   void downpour_sgd(int); // downpour stochastic gradient descent
@@ -38,6 +35,7 @@ class autoencoder: public paracel::paralg{
   void dump_result(int) const;
   MatrixXd acti_func(const MatrixXd &) const;
   ArrayXXd acti_func_der(const MatrixXd &) const;
+  vector<unordered_map<string, MatrixXd> > GetWgtBias() const;
 
   // init
   void ae_init(void);
@@ -70,6 +68,8 @@ class autoencoder: public paracel::paralg{
  private:
   string input;  // where you store data over layers
   string output; // where you dump out results
+
+ protected:
   int worker_id;
   int rounds;
   int n_lyr;  // number of hidden layers
@@ -91,7 +91,9 @@ class autoencoder: public paracel::paralg{
   vector<int> hidden_size;
   int visible_size;
   vector<int> layer_size;  // combine hidden_size and layer_size together
+
   // for DAE
+ private:
   bool corrupt;
   double dvt;  // deviation of Gaussion noise
   double foc;  // fraction of corrupted neurons 

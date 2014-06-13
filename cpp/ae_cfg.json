@@ -1,6 +1,7 @@
 {
   "input" : "/mfs/user/zhaojunbo/paracel/alg/ae/songs/dataset/patch/data_spec_train",
-  "output" :  "/mfs/user/zhaojunbo/paracel/alg/ae/songs/dataset/patch/output_sdae",
+  "output" :  "/mfs/user/zhaojunbo/paracel/alg/ae/songs/dataset/patch/output_sdae612",
+  "output_fine_tuning" :  "/mfs/user/zhaojunbo/paracel/alg/ae/songs/dataset/patch/output_sdae_fn612",
   "learning_method" : "mbdsgd",
   "acti_func_type" : "sigmoid",
   "alpha" : 0.0005,
@@ -16,6 +17,6 @@
   "update_batch" : 4,
   "corrupt" : true,
   "deviation" : 0.25,
-  "frac_of_corrupt" : 0.50
+  "frac_of_corrupt" : 0.50,
   "fine_tuning" : true
 }

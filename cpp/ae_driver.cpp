@@ -11,6 +11,7 @@
 //#include <boost/filesystem>
 
 #include "ae.hpp"
+#include "fine_tn.hpp"
 #include "utils.hpp"
 
 using namespace boost::property_tree;
@@ -46,6 +47,7 @@ int main(int argc, char *argv[])
   ptree pt;
   json_parser::read_json(FLAGS_cfg_file, pt);
   std::string output = pt.get<std::string>("output");
+  std::string output_fn = pt.get<std::string>("output_fine_tuning");
   std::string input = pt.get<std::string>("input");
   std::string learning_method = pt.get<std::string>("learning_method");
   std::string acti_func_type = pt.get<std::string>("acti_func_type");
@@ -74,8 +76,13 @@ int main(int argc, char *argv[])
 
   {
     paracel::autoencoder ae_solver(comm, FLAGS_server_info, input, output, hidden_size, visible_size, learning_method, acti_func_type, rounds, alpha, false, limit_s,
-              true, lamb, sparsity_param, beta, mibt_size, read_batch, update_batch, corrupt, dvt, foc, fine_tuning);
+              true, lamb, sparsity_param, beta, mibt_size, read_batch, update_batch, corrupt, dvt, foc);
     ae_solver.train();
+    if(fine_tuning){
+      paracel::fine_tune fine_tn(comm, FLAGS_server_info, input, output_fn, hidden_size, visible_size, ae_solver.GetWgtBias(), learning_method, acti_func_type, rounds, alpha, false, limit_s,
+              true, lamb, sparsity_param, beta, mibt_size, read_batch, update_batch, 14);
+      fine_tn.smx_nume_grad();
+    }
   }
 
   return 0;

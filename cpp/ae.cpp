@@ -1,10 +1,11 @@
 #include <algorithm>
 #include <iostream>
 #include "ae.hpp"
-#include "ps.hpp"
-#include "utils.hpp"
 #include <cmath>
 #include <random>
+
+// global var
+VectorXd g_rho;  // for sparse penalty
 
 namespace paracel{
 
@@ -114,6 +115,12 @@ inline ArrayXXd autoencoder::acti_func_der(const MatrixXd & acti_data) const {
     exit(-1);
   }
 }
+
+
+vector<unordered_map<string, MatrixXd> > autoencoder::GetWgtBias() const{
+  return WgtBias;
+ }
+
 
 // compute the cost of a single layer of NN
 double autoencoder::ae_cost(int lyr) const {
@@ -603,6 +610,7 @@ void autoencoder::train(int lyr){
   local_dump_Mat(data.transpose(), (todir(input) + "data_" + std::to_string(lyr+1) + ".txt"), ' ');
   data.resize(0, 0); // data clear
   */
+  std::cout << "Finish training layer: " << lyr << std::endl;
 }
 
 
@@ -616,8 +624,6 @@ void autoencoder::train(){
     }
   }
   sync();
-  std::cout << "Training done" << std::endli << "Start fine-tuning" << std::endl;
-  // TODO, use the labels to drive the networks, add a softmax framework.
   std::cout << "Mission complete" << std::endl;
 }
 

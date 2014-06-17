@@ -24,23 +24,28 @@ class fine_tune: public autoencoder {
    fine_tune(paracel::Comm, string, string, string, vector<int>, int, vector<unordered_map<string, MatrixXd> >, string = "sgd", string = "sigmoid", int = 1, double = 0.01, bool = false, int = 0, bool = false, double = 0.001, double = 0.0001, double = 3., int = 1, int = 0, int = 0, int = 2); // TO BE COMPLETED
    virtual ~fine_tune();
 
-   double smx_cost(vector<vector<double> >) const;
+   // softmax
    void smx_init();
-   vector<vector<double> > smx_prob(vector<MatrixXd>, vector<MatrixXd>) const; // probabilities of softmax classifier
-   vector<unordered_map<string, MatrixXd>> smx_grad(vector<vector<double> >) const;
-   void smx_nume_grad() const;
+   MatrixXd smx_prob(MatrixXd &) const; // probabilities of softmax classifier
+   double smx_cost(MatrixXd &) const;
+   MatrixXd smx_grad(MatrixXd &) const;
+   void smx_nume_grad();
 
-   void smx_ae_downpour_sgd(int); // downpour stochastic gradient descent
-   void smx_ae_distribute_bgd(int);          // conventional batch-gradient descent
-   void smx_ae_downpour_sgd_mibt(int); // downpour stochastic gradient descent and mini-batch involved
-   void map_label();
+   // fine tuning the whole networks
+   double fn_cost() const;
+   vector<unordered_map<string, MatrixXd> > fn_stoc_grad(int) const;
+   vector<unordered_map<string, MatrixXd> > fn_mibt_stoc_grad() const;
+   void fn_downpour_sgd(); // downpour stochastic gradient descent
+   void fn_distribute_bgd(); // conventional batch-gradient descent
+   void fn_downpour_sgd_mibt(); // downpour stochastic gradient descent and mini-batch involved
 
  private:
    //vector<unordered_map<string, MatrixXd> > WgtBias;
    string input;
    string output;
-   vector<MatrixXd> smx_W;
-   vector<MatrixXd> smx_b; 
+   MatrixXd smx_W;
+   MatrixXd data_top;
+   VectorXd data_lbl;
    int n_class;  // TODO
 
 };

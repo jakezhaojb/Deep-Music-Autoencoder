@@ -1,9 +1,11 @@
 #! /usr/bin/env python
 
-# This file will finish a SOFTMAX framework.
+# This file helps to finish a SOFTMAX framework using Vectorization.
+
 import math
 from random import randint
 import numpy as np
+import sys
 
 N_ROW = 64
 N_COL = 1000
@@ -19,99 +21,82 @@ def data_generator(n_row, n_col):
     return x, np.array(y)
 
 
-def compute_cost(data_y, prob):
-    assert len(prob) == len(data_y)
-    assert all(len(x.keys()) == 5 for x in prob)
-    cost = 0
-    for dat, prob_dat in zip(data_y, prob):
-        prob_dat = dict(map(lambda (k, x): (k, int(dat == k) * math.log(x)),
-                        prob_dat.items()))
-        cost += reduce(lambda x, y: x + y, prob_dat.values())
-    cost *= -1. / len(data_y)
-    return cost
-
-
-def compute_grad(data_x, data_y, prob):
-    grad = {}
-    for j in range(5):
-        # for each theta
-        grad_elem = np.zeros((data_x.shape[0],))
-        for i, (dat_x, dat_y) in enumerate(zip(data_x.T, data_y)):
-            # traverse dataset
-            grad_elem += dat_x * (int(int(dat_y) == j) - prob[i].get(j))
-        grad_elem *= -1. / len(data_y)
-        grad[j] = grad_elem.reshape(grad_elem.size, 1)
-    return grad
-
-
 def compute_prob(data_x, data_y, theta):
     # traverse the data
-    prob = []
-    for dat in data_x.T:
-        prob_elem_lbl = dict()
-        for i in range(5):
-            prob_elem_lbl[i] = np.exp(np.dot(theta[i].T,
-                                      dat.reshape(dat.size, 1)))
-        prob_sum = reduce(lambda x, y: x + y, prob_elem_lbl.values())
-        for k in prob_elem_lbl.keys():
-            prob_elem_lbl[k] = float(prob_elem_lbl.get(k) / prob_sum)
-        prob.append(prob_elem_lbl)
+    assert isinstance(theta, np.ndarray)
+    assert theta.shape == (5, data_x.shape[0])
+    prob = np.exp(np.dot(theta, data_x))
+    norm_fact = np.sum(prob, axis=0)
+    prob /= norm_fact
     return prob
 
 
+def compute_cost(data_y, prob):
+    assert prob.shape[1] == len(data_y)
+    cost = 0
+    lbl = np.zeros((len(data_y), 5))
+    for lbl_elem, data_y_elem in zip(lbl, data_y):
+        lbl_elem[data_y_elem] = 1
+    cost_array = np.dot(lbl, np.log(prob))
+    cost = cost_array.trace()
+    cost *= -1. /  len(data_y)
+    return cost
+    
+
+def compute_grad(data_x, data_y, prob):
+    assert prob.shape[1] == len(data_y)
+    lbl = np.zeros((data_x.shape[1], 5))
+    for lbl_elem, data_y_elem in zip(lbl, data_y):
+        lbl_elem[data_y_elem] = 1
+    lbl = lbl.T - prob
+    grad = np.dot(lbl, data_x.T)
+    grad *= -1. / len(data_y)
+    return grad
+
+
 def main():
-    rounds = 100
+    rounds = 10000
     alpha = 0.001
     data_x, data_y = data_generator(N_ROW, N_COL)
     # initialize 5 thetas
-    theta = dict()
-    for i in range(5):
-        theta[i] = np.random.rand(data_x.shape[0], 1)
+    theta = np.random.rand(5, data_x.shape[0])
 
     if CHECK_GRAD:
-        epsilon = np.eye(theta[0].shape[0], theta[0].shape[0]) * 1e-4
-        for k in theta.keys():  # check it iterates every theta
-            # check with theta[k]
-            theta1 = theta.copy()
-            theta2 = theta.copy()
-            nume_grad = np.zeros(theta[k].shape)
-            for i in range(theta.get(k).shape[0]):
-                theta1[k] = theta.get(k) + epsilon[:, i].\
-                                reshape(theta.get(k).shape[0], 1)
-                theta2[k] = theta.get(k) - epsilon[:, i].\
-                                reshape(theta.get(k).shape[0], 1)
-                prob1 = compute_prob(data_x, data_y, theta1)
-                prob2 = compute_prob(data_x, data_y, theta2)
-                nume_grad[i] = compute_cost(data_y, prob1) -\
-                               compute_cost(data_y, prob2)
-                nume_grad[i] /= 2 * 1e-4
-            prob = compute_prob(data_x, data_y, theta)
-            grad = compute_grad(data_x, data_y, prob)
-            print np.linalg.norm(grad.get(k) - nume_grad) /\
-                    np.linalg.norm(grad.get(k) + nume_grad)
-    print 'Values printed above should be less than 1e-9'
+        print 'Check gradients computing.'
+        nume_grad = np.zeros(shape=theta.shape)
+        for i, j in np.ndindex(theta.shape):
+            theta_nume1 = theta.copy()
+            theta_nume2 = theta.copy()
+            theta_nume1[i, j] += 1e-4
+            theta_nume2[i, j] -= 1e-4
+            prob1 = compute_prob(data_x, data_y, theta_nume1)
+            prob2 = compute_prob(data_x, data_y, theta_nume2)
+            nume_grad[i, j] = compute_cost(data_y, prob1) -\
+                              compute_cost(data_y, prob2)
+            nume_grad[i, j] /= 2 * 1e-4
+        grad =  compute_grad(data_x, data_y, \
+                compute_prob(data_x, data_y, theta))
+        print np.linalg.norm(grad - nume_grad) /\
+                np.linalg.norm(grad + nume_grad)
+        print 'Values printed above should be less than 1e-9'
 
     # Training
+    while 1:
+        print 'Start training [Y/n]?'
+        key = raw_input()
+        if key is 'Y':
+            break
+        elif key is 'n':
+            sys.exit()
+            print 'Quit here.'
+        else:
+            pass
     for i in range(rounds):
         # traverse the data
-        prob = []
-        for dat in data_x.T:
-            prob_elem_lbl = dict()
-            for i in range(5):
-                prob_elem_lbl[i] = np.exp(np.dot(theta[i].T,
-                                          dat.reshape(dat.size, 1)))
-            prob_sum = reduce(lambda x, y: x + y, prob_elem_lbl.values())
-            for k in prob_elem_lbl.keys():
-                prob_elem_lbl[k] = float(prob_elem_lbl.get(k) / prob_sum)
-            prob.append(prob_elem_lbl)
-
-        cost = compute_cost(data_y, prob)
+        prob = compute_prob(data_x, data_y, theta)
+        print "cost is: %f" % compute_cost(data_y, prob)
         grad = compute_grad(data_x, data_y, prob)
-        assert grad.keys() == theta.keys()
-        grad = dict(map(lambda x: (x[0], -alpha * x[1]), grad.items()))
-        theta = dict(theta.items() + grad.items())
-        print cost
-
-
+        theta -= alpha * grad
+            
 if __name__ == '__main__':
     main()

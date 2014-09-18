@@ -19,7 +19,6 @@ Besides this, if you run the program on a shared pool of servers, I recommend yo
 
 Usage
 ----
-To be updated.
 
 Contact
 ---

@@ -82,6 +82,7 @@ int main(int argc, char *argv[])
       paracel::fine_tune fine_tn(comm, FLAGS_server_info, input, output_fn, hidden_size, visible_size, ae_solver.GetWgtBias(), learning_method, acti_func_type, rounds, alpha, false, limit_s,
               true, lamb, sparsity_param, beta, mibt_size, read_batch, update_batch, 14);
       fine_tn.smx_nume_grad();
+      // TODO setup fine-tuning.
     }
   }
 

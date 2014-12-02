@@ -1,9 +1,11 @@
-Stacked Auto-encoder
+Deep-Music-Autoencoder
 ===
 
 Introduction
 ---
-Following the hot trend of Deep Learning, this repo implements the Stacked Auto-encoders which involves a whole bunch of configuration choices such as 'Denoising', 'Fine-tuning' and 'Dropout'. Stacked Auto-encoder could be used in many kinds of cases. If you do not enable fine-tuning, Stacked Auto-encoder could be treated as an unsupervised learning method; while if fine-tuning option is to be true, this tool is a supervised learning machine which adopts Softmax on top of the neural networks.
+Following the hot trend of Deep Learning, this repo implements the Deep Auto-encoders which involves a whole bunch of configuration choices such as 'Sparse', Denoising', 'Fine-tuning' and 'Dropout'. Deep Auto-encoder could be used in many kinds of cases. If you do not enable fine-tuning, Deep Auto-encoder could be treated as an unsupervised learning method; while if fine-tuning option is to be true, this tool is a supervised learning machine which adopts Softmax on top of the neural networks.
+
+This repo is mainly used to automatically extract features from **MUSIC**. Music Information Retrieval is currently a hot community, and also Deep Learning is ready to dominate! To see more: [ISMIR](http://www.ismir.net/).
 
 Above is a brief introduction to Stacked Auto-encoder. More: [http://deeplearning.net/](http://deeplearning.net/).
 
